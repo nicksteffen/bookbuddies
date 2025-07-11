@@ -29,9 +29,9 @@ import {
   MessageSquare,
   Star,
 } from 'lucide-react-native';
-import { supabase } from '../../../lib/supabase';
-import { useAuth } from '../../../contexts/AuthContext';
-import { searchBooks } from '../../../lib/api';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
+import { searchBooks } from '../../lib/api';
 
 interface ClubDetails {
   id: string;
