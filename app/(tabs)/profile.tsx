@@ -10,12 +10,15 @@ import {
   ActivityIndicator,
   TextInput,
   Modal,
+  Platform,
 } from 'react-native';
+import { Button } from '@/components/ui/button';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Camera, CreditCard as Edit, LogOut, Settings, User, Mail } from 'lucide-react-native';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRouter } from 'expo-router';
+import SignOutConfirmDialogWeb from '../../components/WebAlertDialog';
 
 interface Profile {
   id: string;
@@ -150,6 +153,9 @@ export default function ProfileScreen() {
   };
 
   const handleSignOut = async () => {
+    if (Platform.OS !== 'web') {
+      
+      
     Alert.alert(
       'Sign Out',
       'Are you sure you want to sign out?',
@@ -165,6 +171,10 @@ export default function ProfileScreen() {
         },
       ]
     );
+    } else {
+        await signOut();
+        router.replace('/(auth)/login');
+    }
   };
 
   if (loading) {
@@ -258,7 +268,22 @@ export default function ProfileScreen() {
                 <Text style={styles.menuItemText}>Email Preferences</Text>
               </View>
             </TouchableOpacity>
-            
+            {Platform.OS === 'web' && (
+            <SignOutConfirmDialogWeb onConfirmSignOut={handleSignOut}>
+              <Button variant="ghost"  className="w-full flex-row items-center justify-start py-3 px-4 rounded-lg bg-transparent border border-transparent
+                           "
+              >
+                <View className="flex-row items-center space-x-2">
+                  <LogOut size={20} color="#EF4444" />
+                  <Text className="text-base font-inter-semibold text-red-500">
+                    Sign Out
+                  </Text>
+                </View>
+              </Button>
+            </SignOutConfirmDialogWeb>
+            )}
+            {Platform.OS !== 'web' && (
+              
             <TouchableOpacity 
               style={styles.menuItem}
               onPress={handleSignOut}
@@ -270,6 +295,7 @@ export default function ProfileScreen() {
                 </Text>
               </View>
             </TouchableOpacity>
+            )}
           </View>
         </View>
       </ScrollView>
