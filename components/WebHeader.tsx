@@ -1,83 +1,125 @@
+// components/WebHeader.tsx
 import React, { useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   useWindowDimensions,
   Pressable,
 } from 'react-native';
 import { Link } from 'expo-router';
-import { MenuIcon, XIcon } from 'lucide-react-native';
+import { MenuIcon, XIcon, UserCircleIcon } from 'lucide-react-native';
+
+// Import NativeWind's utility to resolve your Tailwind config
+import resolveConfig from 'tailwindcss/resolveConfig';
+import tailwindConfig from '@/tailwind.config';
+
+// Assuming you have these components
+import SignOutNavWeb from './signOutNavWeb';
+import AvatarProfileButton from './avatarProfileButtonWeb';
+
+// Resolve the full Tailwind config to access theme values directly
+const fullConfig = resolveConfig(tailwindConfig);
+const colors: any = fullConfig.theme.colors;
+
 
 const WebHeader = () => {
   const { width } = useWindowDimensions();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const breakpoint = 768; // Adjust this breakpoint as needed (e.g., typical tablet size)
+  const breakpoint = 768; // Tailwind's 'md' breakpoint
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
-  // Common navigation links component
+  // Helper component for common link styling
+  const NavLink = ({ href, children, isSidebar = false }) => (
+    <Link
+      href={href}
+      className={`
+        ${isSidebar // Styles for sidebar links
+          ? 'py-3 w-full border-b border-border text-lg text-text-DEFAULT font-inter-medium'
+          // Styles for main nav links (desktop)
+          : 'ml-5 text-base text-text-foreground font-inter-medium'} {/* Changed text-text-inverted to text-foreground for shadcn consistency */}
+        hover:text-secondary-light active:text-secondary-light focus:text-secondary-light
+        transition-colors duration-200
+      `}
+      onPress={() => setIsSidebarOpen(false)}
+    >
+      {children}
+    </Link>
+  );
+
+  // Common navigation links content - now conditionally renders SignOut and Profile for sidebar only
   const NavLinksContent = ({ isSidebar = false }) => (
     <>
-      <Link
-        href="/"
-        style={isSidebar ? styles.sidebarNavLink : styles.navLink}
-        onPress={() => setIsSidebarOpen(false)}
-      >
-        Home
-      </Link>
-      <Link
-        href="/clubs"
-        style={isSidebar ? styles.sidebarNavLink : styles.navLink}
-        onPress={() => setIsSidebarOpen(false)}
-      >
-        Clubs
-      </Link>
-      <Link
-        href="/library"
-        style={isSidebar ? styles.sidebarNavLink : styles.navLink}
-        onPress={() => setIsSidebarOpen(false)}
-      >
-        Library
-      </Link>
-      <Link
-        href="/profile"
-        style={isSidebar ? styles.sidebarNavLink : styles.navLink}
-        onPress={() => setIsSidebarOpen(false)}
-      >
-        Profile
-      </Link>
+      <NavLink href="/" isSidebar={isSidebar}>Home</NavLink>
+      <NavLink href="/clubs" isSidebar={isSidebar}>Clubs</NavLink>
+      <NavLink href="/library" isSidebar={isSidebar}>Library</NavLink>
+
+      {isSidebar && (
+        <>
+          {/* These links/buttons only show in the sidebar */}
+          <NavLink href="/account" isSidebar={isSidebar}>Profile</NavLink>
+          <View className="mt-4 w-full">
+            <SignOutNavWeb />
+          </View>
+        </>
+      )}
     </>
   );
 
+
   return (
-    <View style={styles.headerContainer}>
-      <Text style={styles.appTitle}>BookClubBolt</Text>
+    <View
+      // Header Container: flex row, align items, padding, background, border bottom, full width, zIndex
+      // 'justify-between' will push the logo to the left and the right-side group to the far right.
+      className="flex-row justify-between items-center px-5 py-4 bg-background-card border-b border-border w-full z-10"
+    >
+      {/* LEFT SECTION: App Title/Logo */}
+      <Link href="/" asChild>
+        <Pressable>
+          <Text className="text-2xl font-merriweather-bold text-primary-dark">BookClubBolt</Text>
+        </Pressable>
+      </Link>
 
       {width > breakpoint ? (
-        // Desktop/Tablet navigation
-        <View style={styles.navLinks}>
-          <NavLinksContent />
-        </View>
+        // DESKTOP/TABLET LAYOUT:
+        // Main Nav Links immediately follow the logo.
+        // Sign Out/Avatar group is pushed to the far right.
+        <>
+          {/* MIDDLE-LEFT GROUP: Main Nav Links */}
+          {/* This View is now a direct child of the main header View */}
+          <View className="flex-row items-center ml-8"> {/* ml-8 adds spacing from the logo */}
+            <NavLinksContent />
+          </View>
+
+          {/* FAR RIGHT GROUP: Sign Out Button and Avatar */}
+          {/* This View uses ml-auto to push itself to the absolute far right */}
+          <View className="flex-row items-center ml-auto space-x-4">
+            <SignOutNavWeb/>
+            <AvatarProfileButton />
+          </View>
+        </>
       ) : (
-        // Mobile hamburger icon
-        <Pressable onPress={toggleSidebar} style={styles.hamburgerIcon}>
+        // MOBILE LAYOUT: Hamburger icon on the right
+        <Pressable onPress={toggleSidebar} className="p-1.5">
           {isSidebarOpen ? (
-            <XIcon size={24} color="#1F2937" />
+            <XIcon size={24} color={colors.foreground} />
           ) : (
-            <MenuIcon size={24} color="#1F2937" />
+            <MenuIcon size={24} color={colors.foreground} /> 
           )}
         </Pressable>
       )}
 
+      {/* SIDEBAR OVERLAY (Mobile only) */}
       {isSidebarOpen && width <= breakpoint && (
-        // Sidebar overlay (darkens background)
-        <Pressable style={styles.sidebarOverlay} onPress={toggleSidebar}>
-          {/* Sidebar content */}
-          <View style={styles.sidebar} onStartShouldSetResponder={() => true}>
+        <Pressable onPress={toggleSidebar} className="absolute inset-0 bg-black/50 z-[1000] justify-start items-start">
+          <View
+            className="w-[70%] max-w-[300px] h-full bg-background-card pt-[60px] px-5 flex-col justify-start items-start
+                       shadow-lg"
+            onStartShouldSetResponder={() => true} // Prevents closing sidebar when touching inside it
+          >
             <NavLinksContent isSidebar={true} />
           </View>
         </Pressable>
@@ -85,74 +127,5 @@ const WebHeader = () => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  headerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-    width: '100%', // Ensure it takes full width
-    zIndex: 10, // Ensure header is above sidebar when it opens
-  },
-  appTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1F2937',
-  },
-  navLinks: {
-    flexDirection: 'row',
-  },
-  navLink: {
-    marginLeft: 20,
-    fontSize: 16,
-    color: '#3B82F6',
-    fontWeight: '500',
-  },
-  // Styles for the hamburger menu
-  hamburgerIcon: {
-    padding: 5,
-  },
-  sidebarOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)', // Dim the background
-    zIndex: 1000, // Ensure it's on top of everything else
-    justifyContent: 'flex-start',
-    alignItems: 'flex-start',
-  },
-  sidebar: {
-    width: '70%', // Adjust sidebar width as needed
-    maxWidth: 300, // Max width for larger screens (e.g., tablet landscape)
-    height: '100%',
-    backgroundColor: '#FFFFFF',
-    paddingTop: 60, // Space for the header behind
-    paddingHorizontal: 20,
-    flexDirection: 'column',
-    justifyContent: 'flex-start',
-    alignItems: 'flex-start',
-    shadowColor: '#000',
-    shadowOffset: { width: 2, height: 0 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 10,
-  },
-  sidebarNavLink: {
-    paddingVertical: 15,
-    width: '100%', // Take full width of sidebar
-    fontSize: 18,
-    color: '#1F2937',
-    fontWeight: '500',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6', // Light separator for links
-  },
-});
 
 export default WebHeader;
