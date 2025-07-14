@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Calendar, MapPin, Users } from 'lucide-react-native';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { useRouter } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
 
 interface ClubWithCurrentBook {
   id: string;

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
+  StyleSheet,
   ScrollView,
   TouchableOpacity,
   TextInput,
@@ -14,14 +15,6 @@ import { Plus, Search, Users, Lock, Eye, EyeOff } from 'lucide-react-native';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRouter } from 'expo-router';
-
-// Import NativeWind's utility to resolve your Tailwind config
-import resolveConfig from 'tailwindcss/resolveConfig';
-import tailwindConfig from '@/tailwind.config'; // Adjust this path if your tailwind.config.js is not in the project root
-
-// Resolve the full Tailwind config to access theme colors directly for icons and dynamic styles
-const fullConfig = resolveConfig(tailwindConfig);
-const colors: any = fullConfig.theme.colors; // Use 'any' for simpler access to nested colors
 
 interface Club {
   id: string;
@@ -54,6 +47,7 @@ export default function ClubsScreen() {
 
   const loadClubs = async () => {
     try {
+      // Load all public and private clubs (not secret)
       const { data: clubsData } = await supabase
         .from('book_clubs')
         .select(`
@@ -63,11 +57,13 @@ export default function ClubsScreen() {
         .in('privacy', ['public', 'private'])
         .order('created_at', { ascending: false });
 
+      // Load user's club memberships
       const { data: membershipData } = await supabase
         .from('club_members')
         .select('club_id, status')
         .eq('user_id', user?.id);
 
+      // Load user's own clubs (including secret ones)
       const { data: myClubsData } = await supabase
         .from('club_members')
         .select(`
@@ -88,7 +84,7 @@ export default function ClubsScreen() {
           ...club,
           member_count: club.club_members?.[0]?.count || 0,
           user_status: membershipMap[club.id] === 'approved' ? 'member' :
-                       membershipMap[club.id] === 'pending' ? 'pending' : 'none',
+                      membershipMap[club.id] === 'pending' ? 'pending' : 'none',
         }));
 
         setClubs(enrichedClubs);
@@ -126,6 +122,7 @@ export default function ClubsScreen() {
 
       if (clubError) throw clubError;
 
+      // Add creator as member
       const { error: memberError } = await supabase
         .from('club_members')
         .insert({
@@ -207,13 +204,13 @@ export default function ClubsScreen() {
   const getPrivacyIcon = (privacy: string) => {
     switch (privacy) {
       case 'public':
-        return <Users size={16} color={colors.emerald[500]} />;
+        return <Users size={16} color="#10B981" />;
       case 'private':
-        return <Lock size={16} color={colors.amber[500]} />;
+        return <Lock size={16} color="#F59E0B" />;
       case 'secret':
-        return <EyeOff size={16} color={colors.red[500]} />;
+        return <EyeOff size={16} color="#EF4444" />;
       default:
-        return <Users size={16} color={colors.muted.foreground} />;
+        return <Users size={16} color="#6B7280" />;
     }
   };
 
@@ -233,68 +230,68 @@ export default function ClubsScreen() {
   const getPrivacyColor = (privacy: string) => {
     switch (privacy) {
       case 'public':
-        return colors.emerald[500];
+        return '#10B981';
       case 'private':
-        return colors.amber[500];
+        return '#F59E0B';
       case 'secret':
-        return colors.red[500];
+        return '#EF4444';
       default:
-        return colors.muted.foreground;
+        return '#6B7280';
     }
   };
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-background justify-center items-center">
-        <ActivityIndicator size="large" color={colors.primary.DEFAULT} />
+      <SafeAreaView style={styles.container}>
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color="#3B82F6" />
+        </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      <View className="flex-row justify-between items-center px-5 py-4 bg-card border-b border-border">
-        <Text className="text-2xl font-merriweather-bold text-foreground">Book Clubs</Text>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Book Clubs</Text>
         <TouchableOpacity
-          className="bg-primary rounded-full w-10 h-10 justify-center items-center"
+          style={styles.createButton}
           onPress={() => setShowCreateModal(true)}
         >
-          <Plus size={20} color={colors.primary.foreground} />
+          <Plus size={20} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerClassName="p-5">
+      <ScrollView contentContainerStyle={styles.scrollContent}>
         {myClubs.length > 0 && (
-          <View className="mb-8">
-            <Text className="text-lg font-inter-semibold text-foreground mb-4">My Clubs</Text>
-            <View className="gap-3">
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>My Clubs</Text>
+            <View style={styles.clubsList}>
               {myClubs.map((club) => (
                 <TouchableOpacity 
                   key={club.id} 
-                  className="bg-card rounded-lg p-4 shadow-md"
+                  style={styles.clubCard}
                   onPress={() => router.push(`/club/${club.id}`)}
                 >
-                  <View className="flex-row justify-between items-start mb-2">
-                    <View className="flex-1 mr-3">
-                      <Text className="text-base font-inter-semibold text-foreground mb-1">{club.name}</Text>
-                      <View className="flex-row items-center gap-3">
-                        <View className="flex-row items-center gap-1">
-                          {getPrivacyIcon(club.privacy)}
-                          <Text className="text-xs font-inter-medium" style={{ color: getPrivacyColor(club.privacy) }}>
-                            {getPrivacyLabel(club.privacy)}
-                          </Text>
-                        </View>
+                  <View style={styles.clubHeader}>
+                    <View style={styles.clubInfo}>
+                      <Text style={styles.clubName}>{club.name}</Text>
+                      <View style={styles.privacyBadge}>
+                        {getPrivacyIcon(club.privacy)}
+                        <Text style={[styles.privacyText, { color: getPrivacyColor(club.privacy) }]}>
+                          {getPrivacyLabel(club.privacy)}
+                        </Text>
                       </View>
                     </View>
                     <TouchableOpacity
-                      className="bg-destructive rounded-lg px-4 py-2"
+                      style={styles.leaveButton}
                       onPress={() => leaveClub(club.id)}
                     >
-                      <Text className="text-destructive-foreground text-sm font-inter-semibold">Leave</Text>
+                      <Text style={styles.leaveButtonText}>Leave</Text>
                     </TouchableOpacity>
                   </View>
                   {club.description && (
-                    <Text className="text-sm text-muted-foreground mt-2">{club.description}</Text>
+                    <Text style={styles.clubDescription}>{club.description}</Text>
                   )}
                 </TouchableOpacity>
               ))}
@@ -302,38 +299,37 @@ export default function ClubsScreen() {
           </View>
         )}
 
-        <View className="mb-8">
-          <Text className="text-lg font-inter-semibold text-foreground mb-4">Discover Clubs</Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Discover Clubs</Text>
           
-          <View className="flex-row items-center bg-card rounded-lg px-4 py-3 mb-4 gap-3 shadow-sm">
-            <Search size={20} color={colors.muted.foreground} />
+          <View style={styles.searchContainer}>
+            <Search size={20} color="#6B7280" />
             <TextInput
-              className="flex-1 text-base text-foreground"
+              style={styles.searchInput}
               placeholder="Search clubs..."
-              placeholderTextColor={colors.muted.foreground} // Added placeholder color
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
           </View>
 
-          <View className="gap-3">
+          <View style={styles.clubsList}>
             {filteredClubs.map((club) => (
               <TouchableOpacity 
                 key={club.id} 
-                className="bg-card rounded-lg p-4 shadow-md"
+                style={styles.clubCard}
                 onPress={() => router.push(`/club/${club.id}`)}
               >
-                <View className="flex-row justify-between items-start mb-2">
-                  <View className="flex-1 mr-3">
-                    <Text className="text-base font-inter-semibold text-foreground mb-1">{club.name}</Text>
-                    <View className="flex-row items-center gap-3">
-                      <View className="flex-row items-center gap-1">
+                <View style={styles.clubHeader}>
+                  <View style={styles.clubInfo}>
+                    <Text style={styles.clubName}>{club.name}</Text>
+                    <View style={styles.clubMeta}>
+                      <View style={styles.privacyBadge}>
                         {getPrivacyIcon(club.privacy)}
-                        <Text className="text-xs font-inter-medium" style={{ color: getPrivacyColor(club.privacy) }}>
+                        <Text style={[styles.privacyText, { color: getPrivacyColor(club.privacy) }]}>
                           {getPrivacyLabel(club.privacy)}
                         </Text>
                       </View>
-                      <Text className="text-xs text-muted-foreground">
+                      <Text style={styles.memberCount}>
                         {club.member_count} member{club.member_count !== 1 ? 's' : ''}
                       </Text>
                     </View>
@@ -341,30 +337,30 @@ export default function ClubsScreen() {
                   
                   {club.user_status === 'none' && (
                     <TouchableOpacity
-                      className="bg-primary rounded-lg px-4 py-2"
+                      style={styles.joinButton}
                       onPress={() => joinClub(club.id, club.privacy)}
                     >
-                      <Text className="text-primary-foreground text-sm font-inter-semibold">
+                      <Text style={styles.joinButtonText}>
                         {club.privacy === 'public' ? 'Join' : 'Request'}
                       </Text>
                     </TouchableOpacity>
                   )}
                   
                   {club.user_status === 'pending' && (
-                    <View className="bg-amber-500 rounded-lg px-4 py-2"> {/* Used bg-amber-500 */}
-                      <Text className="text-white text-sm font-inter-semibold">Pending</Text>
+                    <View style={styles.pendingButton}>
+                      <Text style={styles.pendingButtonText}>Pending</Text>
                     </View>
                   )}
                   
                   {club.user_status === 'member' && (
-                    <View className="bg-emerald-500 rounded-lg px-4 py-2"> {/* Used bg-emerald-500 */}
-                      <Text className="text-white text-sm font-inter-semibold">Member</Text>
+                    <View style={styles.memberButton}>
+                      <Text style={styles.memberButtonText}>Member</Text>
                     </View>
                   )}
                 </View>
                 
                 {club.description && (
-                  <Text className="text-sm text-muted-foreground mt-2">{club.description}</Text>
+                  <Text style={styles.clubDescription}>{club.description}</Text>
                 )}
               </TouchableOpacity>
             ))}
@@ -377,40 +373,38 @@ export default function ClubsScreen() {
         animationType="slide"
         presentationStyle="pageSheet"
       >
-        <SafeAreaView className="flex-1 bg-background">
-          <View className="flex-row justify-between items-center px-5 py-4 border-b border-border">
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
             <TouchableOpacity onPress={() => setShowCreateModal(false)}>
-              <Text className="text-base text-muted-foreground">Cancel</Text>
+              <Text style={styles.cancelText}>Cancel</Text>
             </TouchableOpacity>
-            <Text className="text-lg font-inter-semibold text-foreground">Create Club</Text>
+            <Text style={styles.modalTitle}>Create Club</Text>
             <TouchableOpacity
               onPress={createClub}
               disabled={creating}
             >
-              <Text className={`text-base font-inter-semibold ${creating ? 'text-muted-foreground' : 'text-primary'}`}>
+              <Text style={[styles.createText, creating && styles.disabledText]}>
                 {creating ? 'Creating...' : 'Create'}
               </Text>
             </TouchableOpacity>
           </View>
 
-          <ScrollView className="flex-1 p-5">
-            <View className="mb-6">
-              <Text className="text-base font-inter-semibold text-foreground mb-2">Club Name *</Text>
+          <ScrollView style={styles.modalContent}>
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Club Name *</Text>
               <TextInput
-                className="border border-border rounded-lg p-4 text-base bg-input text-foreground"
+                style={styles.input}
                 placeholder="Enter club name"
-                placeholderTextColor={colors.muted.foreground}
                 value={newClub.name}
                 onChangeText={(text) => setNewClub({ ...newClub, name: text })}
               />
             </View>
 
-            <View className="mb-6">
-              <Text className="text-base font-inter-semibold text-foreground mb-2">Description</Text>
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Description</Text>
               <TextInput
-                className="border border-border rounded-lg p-4 text-base bg-input h-20 text-foreground text-top"
+                style={[styles.input, styles.textArea]}
                 placeholder="Describe your club..."
-                placeholderTextColor={colors.muted.foreground}
                 value={newClub.description}
                 onChangeText={(text) => setNewClub({ ...newClub, description: text })}
                 multiline
@@ -418,24 +412,25 @@ export default function ClubsScreen() {
               />
             </View>
 
-            <View className="mb-6">
-              <Text className="text-base font-inter-semibold text-foreground mb-2">Privacy Setting</Text>
-              <View className="gap-3">
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Privacy Setting</Text>
+              <View style={styles.privacyOptions}>
                 {(['public', 'private', 'secret'] as const).map((privacy) => (
                   <TouchableOpacity
                     key={privacy}
-                    className={`border rounded-lg p-4
-                      ${newClub.privacy === privacy ? 'border-primary bg-primary/10' : 'border-border'}
-                    `}
+                    style={[
+                      styles.privacyOption,
+                      newClub.privacy === privacy && styles.privacyOptionSelected,
+                    ]}
                     onPress={() => setNewClub({ ...newClub, privacy })}
                   >
-                    <View className="flex-row items-center gap-2 mb-1">
+                    <View style={styles.privacyOptionHeader}>
                       {getPrivacyIcon(privacy)}
-                      <Text className="text-base font-inter-semibold text-foreground">
+                      <Text style={styles.privacyOptionTitle}>
                         {getPrivacyLabel(privacy)}
                       </Text>
                     </View>
-                    <Text className="text-sm text-muted-foreground">
+                    <Text style={styles.privacyOptionDescription}>
                       {privacy === 'public' && 'Anyone can join immediately'}
                       {privacy === 'private' && 'Join requests require approval'}
                       {privacy === 'secret' && 'Invite-only, not discoverable'}
@@ -450,3 +445,247 @@ export default function ClubsScreen() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
+  },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1F2937',
+  },
+  createButton: {
+    backgroundColor: '#3B82F6',
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  scrollContent: {
+    padding: 20,
+  },
+  section: {
+    marginBottom: 32,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 16,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 16,
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#1F2937',
+  },
+  clubsList: {
+    gap: 12,
+  },
+  clubCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  clubHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  clubInfo: {
+    flex: 1,
+    marginRight: 12,
+  },
+  clubName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 4,
+  },
+  clubMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  privacyBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  privacyText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  memberCount: {
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  clubDescription: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginTop: 8,
+  },
+  joinButton: {
+    backgroundColor: '#3B82F6',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  joinButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  pendingButton: {
+    backgroundColor: '#F59E0B',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  pendingButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  memberButton: {
+    backgroundColor: '#10B981',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  memberButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  leaveButton: {
+    backgroundColor: '#EF4444',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  leaveButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  cancelText: {
+    fontSize: 16,
+    color: '#6B7280',
+  },
+  createText: {
+    fontSize: 16,
+    color: '#3B82F6',
+    fontWeight: '600',
+  },
+  disabledText: {
+    color: '#9CA3AF',
+  },
+  modalContent: {
+    flex: 1,
+    padding: 20,
+  },
+  formGroup: {
+    marginBottom: 24,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    backgroundColor: '#F9FAFB',
+  },
+  textArea: {
+    height: 80,
+    textAlignVertical: 'top',
+  },
+  privacyOptions: {
+    gap: 12,
+  },
+  privacyOption: {
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    padding: 16,
+  },
+  privacyOptionSelected: {
+    borderColor: '#3B82F6',
+    backgroundColor: '#EFF6FF',
+  },
+  privacyOptionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  privacyOptionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  privacyOptionDescription: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+});

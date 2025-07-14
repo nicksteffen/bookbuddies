@@ -1,5 +1,7 @@
 // components/WebHeader.tsx
-import React, { useState } from 'react';
+"use client";
+
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,122 +9,139 @@ import {
   Pressable,
 } from 'react-native';
 import { Link } from 'expo-router';
-import { MenuIcon, XIcon, UserCircleIcon } from 'lucide-react-native';
+import { MenuIcon, XIcon, BookOpen } from 'lucide-react';
 
-// Import NativeWind's utility to resolve your Tailwind config
+import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
+import { Button } from './ui/button';
+
+// Import the new/updated components
+import SignOutButtonWeb from '@/components/SignOutButtonWeb';
+import AvatarProfileButtonWeb from '@/components/AvatarProfileButtonWeb';
+import LoginButtonWeb from '@/components/LoginButtonWeb';
+import SignUpButtonWeb from '@/components/SignUpButtonWeb';
+
 import resolveConfig from 'tailwindcss/resolveConfig';
 import tailwindConfig from '@/tailwind.config';
-
-// Assuming you have these components
-import SignOutNavWeb from './signOutNavWeb';
-import AvatarProfileButton from './avatarProfileButtonWeb';
-
-// Resolve the full Tailwind config to access theme values directly
+import AuthButton from './WebHeaderAuthButton';
+import { useAuth } from '@/contexts/AuthContext';
 const fullConfig = resolveConfig(tailwindConfig);
 const colors: any = fullConfig.theme.colors;
 
 
-const WebHeader = () => {
+interface WebHeaderProps {
+  // Add actual user data props if needed for avatarUrl, userDisplayName
+  // onSignOut: () => void; // Pass your actual sign out function here
+  // userAvatarUrl?: string | null;
+  // userDisplayName?: string | null;
+}
+
+const WebHeader = ({ /*, onSignOut, userAvatarUrl, userDisplayName */ }: WebHeaderProps) => {
+
+  const { user, signOut } = useAuth();
   const { width } = useWindowDimensions();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const breakpoint = 768; // Tailwind's 'md' breakpoint
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
+  const handleSignOut = () => {
+    signOut();
+    setIsSidebarOpen(false); // Close sidebar after action
   };
 
-  // Helper component for common link styling
-  const NavLink = ({ href, children, isSidebar = false }) => (
-    <Link
-      href={href}
+  const NavLink = ({ href, children, isSidebar = false }: { href: string; children: React.ReactNode; isSidebar?: boolean }) => (
+    <Link href={href}
       className={`
-        ${isSidebar // Styles for sidebar links
-          ? 'py-3 w-full border-b border-border text-lg text-text-DEFAULT font-inter-medium'
-          // Styles for main nav links (desktop)
-          : 'ml-5 text-base text-text-foreground font-inter-medium'} {/* Changed text-text-inverted to text-foreground for shadcn consistency */}
+        ${isSidebar
+          ? 'py-3 w-full border-b border-border text-lg text-foreground font-inter-medium'
+          : 'ml-5 text-base text-foreground font-inter-medium'}
         hover:text-secondary-light active:text-secondary-light focus:text-secondary-light
         transition-colors duration-200
       `}
-      onPress={() => setIsSidebarOpen(false)}
+      onClick={() => setIsSidebarOpen(false)} // Close sidebar on link click (web-only)
     >
       {children}
     </Link>
   );
 
-  // Common navigation links content - now conditionally renders SignOut and Profile for sidebar only
-  const NavLinksContent = ({ isSidebar = false }) => (
+  const NavLinksContent = ({ isSidebar = false }: { isSidebar?: boolean }) => (
     <>
-      <NavLink href="/" isSidebar={isSidebar}>Home</NavLink>
+      {user && (
+        <NavLink href="/" isSidebar={isSidebar}>Home</NavLink>
+      )}
       <NavLink href="/clubs" isSidebar={isSidebar}>Clubs</NavLink>
       <NavLink href="/library" isSidebar={isSidebar}>Library</NavLink>
 
+      {/* Auth/Guest actions within sidebar */}
       {isSidebar && (
-        <>
-          {/* These links/buttons only show in the sidebar */}
-          <NavLink href="/account" isSidebar={isSidebar}>Profile</NavLink>
-          <View className="mt-4 w-full">
-            <SignOutNavWeb />
-          </View>
-        </>
+        <View className="mt-4 w-full flex-col space-y-3">
+          {user ? (
+            <>
+              <NavLink href="/account" isSidebar={true}>Profile</NavLink>
+              <SignOutButtonWeb onConfirmSignOut={handleSignOut} />
+            </>
+          ) : (
+            <>
+              <AuthButton linkDest="/login" buttonText="Login!" />
+              <AuthButton linkDest="/signup" buttonText="Signup" />
+            </>
+          )}
+        </View>
       )}
     </>
   );
 
-
   return (
-    <View
-      // Header Container: flex row, align items, padding, background, border bottom, full width, zIndex
-      // 'justify-between' will push the logo to the left and the right-side group to the far right.
-      className="flex-row justify-between items-center px-5 py-4 bg-background-card border-b border-border w-full z-10"
-    >
+    <View className="flex-row justify-between items-center px-5 py-4 bg-card border-b border-border w-full z-10">
       {/* LEFT SECTION: App Title/Logo */}
-      <Link href="/" asChild>
-        <Pressable>
-          <Text className="text-2xl font-merriweather-bold text-primary-dark">BookClubBolt</Text>
+      <Link href="/(marketing)" asChild>
+        <Pressable className="flex flex-row items-center justify-center">
+          <BookOpen size={24} className="text-primary-dark" />
+          <Text className="ml-2 font-merriweather-bold text-2xl text-primary-dark">BookClub</Text>
         </Pressable>
       </Link>
 
       {width > breakpoint ? (
         // DESKTOP/TABLET LAYOUT:
-        // Main Nav Links immediately follow the logo.
-        // Sign Out/Avatar group is pushed to the far right.
         <>
           {/* MIDDLE-LEFT GROUP: Main Nav Links */}
-          {/* This View is now a direct child of the main header View */}
-          <View className="flex-row items-center ml-8"> {/* ml-8 adds spacing from the logo */}
+          <View className="flex-row items-center ml-8">
             <NavLinksContent />
           </View>
-
-          {/* FAR RIGHT GROUP: Sign Out Button and Avatar */}
-          {/* This View uses ml-auto to push itself to the absolute far right */}
+          {/* FAR RIGHT GROUP: Auth/Guest Actions */}
           <View className="flex-row items-center ml-auto space-x-4">
-            <SignOutNavWeb/>
-            <AvatarProfileButton />
+            {!!user ? (
+              <>
+                <SignOutButtonWeb onConfirmSignOut={handleSignOut} />
+                <AvatarProfileButtonWeb
+                  // Pass actual props here
+                  // avatarUrl={userAvatarUrl}
+                  // userDisplayName={userDisplayName}
+                />
+              </>
+            ) : (
+              <>
+                <AuthButton linkDest="/login" buttonText="Login" />
+                <AuthButton linkDest="/signup" buttonText="Signup" />
+                {/* <SignOutButtonWeb onConfirmSignOut={handleSignOut} /> */}
+              </>
+            )}
           </View>
         </>
       ) : (
         // MOBILE LAYOUT: Hamburger icon on the right
-        <Pressable onPress={toggleSidebar} className="p-1.5">
-          {isSidebarOpen ? (
-            <XIcon size={24} color={colors.foreground} />
-          ) : (
-            <MenuIcon size={24} color={colors.foreground} /> 
-          )}
-        </Pressable>
-      )}
-
-      {/* SIDEBAR OVERLAY (Mobile only) */}
-      {isSidebarOpen && width <= breakpoint && (
-        <Pressable onPress={toggleSidebar} className="absolute inset-0 bg-black/50 z-[1000] justify-start items-start">
-          <View
-            className="w-[70%] max-w-[300px] h-full bg-background-card pt-[60px] px-5 flex-col justify-start items-start
-                       shadow-lg"
-            onStartShouldSetResponder={() => true} // Prevents closing sidebar when touching inside it
-          >
-            <NavLinksContent isSidebar={true} />
-          </View>
-        </Pressable>
+        <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+          <SheetTrigger asChild>
+            <Button variant="ghost" className="p-1.5">
+              <MenuIcon size={24} className="text-foreground" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-[70%] max-w-[300px] bg-card p-0 pt-16 flex-col items-start">
+            {/* Sidebar content */}
+            <View className="flex-1 w-full p-5">
+              <NavLinksContent isSidebar={true} />
+            </View>
+          </SheetContent>
+        </Sheet>
       )}
     </View>
   );

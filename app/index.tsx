@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useRouter } from 'expo-router';
-import { View, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, Platform } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import '@/app/global.css'
 
@@ -12,6 +12,8 @@ export default function Index() {
     if (!loading) {
       if (user) {
         router.replace('/(tabs)');
+      } else if (Platform.OS === 'web') {
+        router.replace('/(marketing)');
       } else {
         router.replace('/(auth)/login');
       }

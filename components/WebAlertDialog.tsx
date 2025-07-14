@@ -1,7 +1,3 @@
-// components/SignOutConfirmDialogWeb.tsx
-// This component provides a confirmation dialog for signing out,
-// designed to be used only on web platforms with shadcn/ui.
-
 "use client"
 import React from 'react';
 import { Platform } from 'react-native'; // Import Platform to check OS

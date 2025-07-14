@@ -1,42 +1,50 @@
-import React from "react";
-import { View, Text, Pressable } from "react-native";
-// 'react-native-elements';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar"
-import { Link } from "expo-router";
-import { UserCircleIcon } from "lucide-react-native";
+// components/AvatarProfileButtonWeb.tsx
+"use client"; // This component uses client-side hooks (Link)
+
+import React from 'react';
+import { Link } from 'expo-router';
+import { UserCircle } from 'lucide-react'; // Lucide icon for web
+import { Button } from '@/components/ui/button'; // shadcn/ui Button
+
+// Import Tailwind config to access colors
+import resolveConfig from 'tailwindcss/resolveConfig';
+import tailwindConfig from '@/tailwind.config'; // Adjust path if needed
+const fullConfig = resolveConfig(tailwindConfig);
+const colors: any = fullConfig.theme.colors;
 
 
+interface AvatarProfileButtonWebProps {
+  /**
+   * Optional: URL for the user's avatar image. If not provided, a default icon is shown.
+   */
+  avatarUrl?: string | null;
+}
 
-// export default function AvatarProfileButton() {
-//   return (
-//     <View className="flex-row items-center">
-//       <Avatar >
-//         <AvatarFallback>BC</AvatarFallback>
-//       </Avatar>
-//       <Text className="ml-2 font-semibold">John Doe</Text>
-//     </View>
-//   );
-// }
-// 
-export default function AvatarProfileButton() {
+export default function AvatarProfileButtonWeb({ avatarUrl }: AvatarProfileButtonWebProps) {
   return (
     <Link href="/account" asChild>
-      <Pressable
-        className="ml-4 w-10 h-10 rounded-full bg-primary-dark items-center justify-center
-               border border-transparent hover:border-secondary-light hover:scale-105 active:scale-95 transition-transform duration-150"
+      <Button
+        variant="ghost" // Use ghost variant for a subtle button
+        className="w-10 h-10 rounded-full p-0 flex items-center justify-center
+                   bg-primary-dark border border-transparent
+                   hover:border-secondary-light hover:scale-105 active:scale-95 transition-transform duration-150"
       >
-        {/* This is the placeholder content.
-      You can replace the Text with an Image component for an actual avatar, 
-      or use a different icon from lucide-react-native.
-    */}
-        <UserCircleIcon size={24} /> {/* Using Lucide icon */}
-        {/* Or if you prefer initials: */}
-        {/* <Text className="text-sm font-inter-semibold text-text-inverted">JD</Text> */}
-      </Pressable>
+        {avatarUrl ? (
+          // In a real app, you'd use a proper Image component or shadcn AvatarImage
+          <img
+            src={avatarUrl}
+            alt="User Avatar"
+            className="w-full h-full rounded-full object-cover"
+            onError={(e) => {
+              // Fallback if image fails to load
+              e.currentTarget.src = `https://placehold.co/40x40/${colors.primary.DEFAULT.substring(1)}/${colors.primary.foreground.substring(1)}?text=U`;
+            }}
+          />
+        ) : (
+          // Placeholder icon if no avatar URL
+          <UserCircle size={24} color={colors.primary.foreground} />
+        )}
+      </Button>
     </Link>
-  )
+  );
 }

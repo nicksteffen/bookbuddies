@@ -1,3 +1,4 @@
+"use client"
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -29,9 +30,10 @@ import {
   MessageSquare,
   Star,
 } from 'lucide-react-native';
-import { supabase } from '../../lib/supabase';
-import { useAuth } from '../../contexts/AuthContext';
-import { searchBooks } from '../../lib/api';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
+import { searchBooks } from '@/lib/api';
+import Members from '@/components/clubPage/Members';
 
 interface ClubDetails {
   id: string;
@@ -84,9 +86,9 @@ interface Meeting {
 }
 
 export default function ClubDetailScreen() {
-  console.log('loading page correctly');
+  // console.log('loading page correctly');
 
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id: bookClubId } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
   const router = useRouter();
 
@@ -121,25 +123,25 @@ export default function ClubDetailScreen() {
   });
 
   useEffect(() => {
-    console.log('in useEffect');
-    console.log(id && user);
-    if (id && user) {
+    // console.log('in useEffect');
+    // console.log(bookClubId && user);
+    if (bookClubId && user) {
       loadClubDetails();
       loadMembers();
       loadUserNotes();
       loadMeetings();
     }
-  }, [id, user]);
+  }, [bookClubId, user]);
 
   const loadClubDetails = async () => {
     try {
-      console.log('loac club details');
+      // console.log('loac club details');
       const { data: testData, error: testError } = await supabase
         .from('book_clubs')
         .select('*');
 
-      console.log('testData');
-      console.log(testData);
+      // console.log('testData');
+      // console.log(testData);
 
       const { data: currentClub, error: currentClubError } = await supabase
         .from('book_clubs')
@@ -161,69 +163,18 @@ export default function ClubDetailScreen() {
           )
         `,
         )
-        .eq('id', id)
+        .eq('id', bookClubId)
         .single();
-
-      const { data: tempData, error: tempError } = await supabase
-        .from('book_clubs')
-        .select(
-          `
-          *,
-          books (
-            id,
-            title,
-            author,
-            cover_url,
-            synopsis,
-            page_count
-          ),
-          club_books(
-            id,
-            notes_revealed,
-            average_rating
-          )
-        `,
-        )
-        .eq('id', id)
-        .single();
-
-      console.log('tempData');
-      console.log(tempError);
-      console.log(tempData);
 
       if (currentClubError && currentClubError.code != 'PGRST116') {
         throw currentClubError;
       }
-      // if (error) throw error;
-
-      const dummyBook = {
-        id: 0,
-        title: 'Dummy Book',
-        author: 'Dummy Author',
-        cover_url: 'https://via.placeholder.com/150',
-        synopsis: 'This is a dummy book.',
-        page_count: 100,
-      };
-      const dummyClubBook = {
-        id: 0,
-        notes_revealed: false,
-        average_rating: 0,
-      };
 
       setClub({
-        // ...data,
         ...currentClub,
-        current_book: tempData.books,
-        current_club_book: tempData.club_books,
-        // current_book: data.books,
-        // club_books: data.club_books,
+        current_book: currentClub.books,
+        current_club_book: currentClub.club_books,
       });
-      console.log('check club');
-      console.log(!!club);
-
-      console.log('data vs user');
-      console.log(currentClub.admin_user_id);
-      console.log(user?.id);
 
       setIsAdmin(currentClub.admin_user_id === user?.id);
 
@@ -231,7 +182,7 @@ export default function ClubDetailScreen() {
       const { data: memberData } = await supabase
         .from('club_members')
         .select('status')
-        .eq('club_id', id)
+        .eq('club_id', bookClubId)
         .eq('user_id', user?.id)
         .single();
 
@@ -245,18 +196,20 @@ export default function ClubDetailScreen() {
 
   const loadMembers = async () => {
     try {
-      const { data } = await supabase
+      console.log("book club id")
+      console.log(bookClubId)
+      const { data , error: memberError} = await supabase
         .from('club_members')
         .select(
           `
           *,
-          profiles!inner (
+          profiles (
             display_name,
             email
           )
         `,
         )
-        .eq('club_id', id)
+        .eq('club_id', bookClubId)
         .order('created_at', { ascending: true });
 
       if (data) {
@@ -268,15 +221,19 @@ export default function ClubDetailScreen() {
   };
 
   const loadUserNotes = async () => {
+    console.log(club)
     if (!club?.current_book_id) return;
 
     try {
       const { data: clubBookData } = await supabase
         .from('club_books')
         .select('id')
-        .eq('club_id', id)
+        .eq('club_id', bookClubId)
         .eq('book_id', club.current_book_id)
         .single();
+      
+      console.log(clubBookData)
+      console.log(clubBookData)
 
       if (clubBookData) {
         const { data } = await supabase
@@ -304,7 +261,7 @@ export default function ClubDetailScreen() {
       const { data } = await supabase
         .from('club_meetings')
         .select('*')
-        .eq('club_id', id)
+        .eq('club_id', bookClubId)
         .gte('date_time', new Date().toISOString())
         .order('date_time', { ascending: true });
 
@@ -365,7 +322,7 @@ export default function ClubDetailScreen() {
       const { error: clubError } = await supabase
         .from('book_clubs')
         .update({ current_book_id: bookId })
-        .eq('id', id);
+        .eq('id', bookClubId);
 
       if (clubError) throw clubError;
 
@@ -373,7 +330,7 @@ export default function ClubDetailScreen() {
       const { error: clubBookError } = await supabase
         .from('club_books')
         .insert({
-          club_id: id,
+          club_id: bookClubId,
           book_id: bookId,
           status: 'current',
           notes_revealed: false,
@@ -399,7 +356,7 @@ export default function ClubDetailScreen() {
 
     try {
       const { error } = await supabase.from('club_meetings').insert({
-        club_id: id,
+        club_id: bookClubId,
         title: meetingForm.title,
         date_time: meetingForm.date_time,
         location: meetingForm.location || null,
@@ -430,7 +387,7 @@ export default function ClubDetailScreen() {
       const { data: clubBookData } = await supabase
         .from('club_books')
         .select('id')
-        .eq('club_id', id)
+        .eq('club_id', bookClubId)
         .eq('book_id', club.current_book_id)
         .single();
 
@@ -484,7 +441,7 @@ export default function ClubDetailScreen() {
               const { error } = await supabase
                 .from('club_books')
                 .update({ notes_revealed: true })
-                .eq('club_id', id)
+                .eq('club_id', bookClubId)
                 .eq('book_id', club.current_book_id);
 
               if (error) throw error;
@@ -743,6 +700,11 @@ export default function ClubDetailScreen() {
           )}
         </View>
 
+        
+        <Members initialClub={club} bookClubId={bookClubId} />
+
+        
+        
         {/* Members Section */}
         {isAdmin && (
           <View style={styles.section}>
