@@ -14,14 +14,7 @@ import WebFooter from '@/components/WebFooter';
 
 
 
-// Assuming SimpleWebFooter is defined in a shared place or directly here for this page
-const SimpleWebFooter = () => (
-  <View className="bg-card border-t border-border py-8 px-5 mt-10">
-    <Text className="text-muted-foreground text-center text-sm">
-      © {new Date().getFullYear()} BookClub. All rights reserved.
-    </Text>
-  </View>
-);
+
 
 
 // Feature data (unchanged)
