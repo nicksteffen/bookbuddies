@@ -3,7 +3,6 @@ import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   TouchableOpacity,
   Image,
@@ -15,23 +14,19 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
-  Settings,
-  Users,
   BookOpen,
   Calendar,
   Eye,
   EyeOff,
   Plus,
   CreditCard as Edit,
-  Trash2,
-  UserPlus,
   UserMinus,
   Crown,
   MessageSquare,
-  Star,
 } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/contexts/AuthContext';
+// import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '../../../contexts/AuthContext';
 import { searchBooks } from '@/lib/api';
 import Members from '@/components/clubPage/Members';
 
@@ -90,7 +85,7 @@ export default function ClubDetailScreen() {
 
   const { id: bookClubId } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
-  const router = useRouter();
+  // const router = useRouter();
 
   const [club, setClub] = useState<ClubDetails | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
@@ -211,6 +206,8 @@ export default function ClubDetailScreen() {
         )
         .eq('club_id', bookClubId)
         .order('created_at', { ascending: true });
+      console.log("members data - main page")
+      console.log(data)
 
       if (data) {
         setMembers(data);
@@ -231,7 +228,7 @@ export default function ClubDetailScreen() {
         .eq('club_id', bookClubId)
         .eq('book_id', club.current_book_id)
         .single();
-      
+
       console.log(clubBookData)
       console.log(clubBookData)
 
@@ -518,9 +515,9 @@ export default function ClubDetailScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#3B82F6" />
+      <SafeAreaView className="flex-1 bg-gray-50">
+        <View className="flex-1 justify-center items-center">
+          <ActivityIndicator size="large" color="rgb(59, 130, 246)" />{/* blue-500 */}
         </View>
       </SafeAreaView>
     );
@@ -528,9 +525,9 @@ export default function ClubDetailScreen() {
 
   if (!club) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.centered}>
-          <Text style={styles.errorText}>Club not found!</Text>
+      <SafeAreaView className="flex-1 bg-gray-50">
+        <View className="flex-1 justify-center items-center">
+          <Text className="text-base text-red-500">Club not found!</Text>
         </View>
       </SafeAreaView>
     );
@@ -539,63 +536,63 @@ export default function ClubDetailScreen() {
   const notesRevealed = club.club_books?.[0]?.notes_revealed || false;
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+    <SafeAreaView className="flex-1 bg-gray-50">
+      {/* <ScrollView contentContainerStyle={{ padding: 20 }}> */}
         {/* Club Header */}
-        <View style={styles.header}>
-          <Text style={styles.clubName}>{club.name}</Text>
+        <View className="bg-white rounded-xl p-6 mb-6 shadow-md">
+          <Text className="text-2xl font-bold text-gray-800 mb-2">{club.name}</Text>
           {club.description && (
-            <Text style={styles.clubDescription}>{club.description}</Text>
+            <Text className="text-base text-gray-600 mb-3">{club.description}</Text>
           )}
           {isAdmin && (
-            <View style={styles.adminBadge}>
-              <Crown size={16} color="#F59E0B" />
-              <Text style={styles.adminText}>Admin</Text>
+            <View className="flex flex-row items-center gap-1.5 self-start">
+              <Crown size={16} color="rgb(245, 158, 11)" />{/* amber-500 */}
+              <Text className="text-sm text-amber-500 font-semibold">Admin</Text>
             </View>
           )}
         </View>
 
         {/* Current Book Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Current Book</Text>
+        <View className="mb-6">
+          <View className="flex flex-row justify-between items-center mb-4">
+            <Text className="text-xl font-semibold text-gray-800">Current Book</Text>
             {isAdmin && (
               <TouchableOpacity
-                style={styles.actionButton}
+                className="p-2"
                 onPress={() => setShowBookModal(true)}
               >
-                <Edit size={16} color="#3B82F6" />
+                <Edit size={16} color="rgb(59, 130, 246)" />{/* blue-500 */}
               </TouchableOpacity>
             )}
           </View>
 
           {club.current_book ? (
-            <View style={styles.bookCard}>
-              <View style={styles.bookContent}>
+            <View className="bg-white rounded-xl p-4 shadow-md">
+              <View className="flex flex-row gap-4 mb-4">
                 {club.current_book.cover_url ? (
                   <Image
                     source={{ uri: club.current_book.cover_url }}
-                    style={styles.bookCover}
+                    className="w-20 h-30 rounded-lg"
                   />
                 ) : (
-                  <View style={styles.placeholderCover}>
-                    <Text style={styles.placeholderText}>📚</Text>
+                  <View className="w-20 h-30 bg-gray-200 rounded-lg justify-center items-center">
+                    <Text className="text-3xl">📚</Text>
                   </View>
                 )}
-                <View style={styles.bookInfo}>
-                  <Text style={styles.bookTitle}>
+                <View className="flex-1">
+                  <Text className="text-lg font-semibold text-gray-800 mb-1">
                     {club.current_book.title}
                   </Text>
-                  <Text style={styles.bookAuthor}>
+                  <Text className="text-base text-gray-600 mb-2">
                     {club.current_book.author}
                   </Text>
                   {club.current_book.page_count && (
-                    <Text style={styles.bookPages}>
+                    <Text className="text-sm text-gray-400 mb-2">
                       {club.current_book.page_count} pages
                     </Text>
                   )}
                   {club.current_book.synopsis && (
-                    <Text style={styles.bookSynopsis} numberOfLines={3}>
+                    <Text className="text-sm text-gray-600 leading-5" numberOfLines={3}>
                       {club.current_book.synopsis}
                     </Text>
                   )}
@@ -603,37 +600,36 @@ export default function ClubDetailScreen() {
               </View>
 
               {isMember && (
-                <View style={styles.bookActions}>
+                <View className="flex flex-row gap-3">
                   <TouchableOpacity
-                    style={styles.notesButton}
+                    className="flex-1 flex-row items-center justify-center gap-2 bg-amber-600 rounded-lg py-3"
                     onPress={() => setShowNotesModal(true)}
                   >
-                    <MessageSquare size={16} color="#FFFFFF" />
-                    <Text style={styles.notesButtonText}>
+                    <MessageSquare size={16} color="rgb(255, 255, 255)" />{/* white */}
+                    <Text className="text-white text-sm font-semibold">
                       My Notes & Questions
                     </Text>
                   </TouchableOpacity>
 
                   {isAdmin && (
                     <TouchableOpacity
-                      style={[
-                        styles.revealButton,
-                        notesRevealed && styles.revealButtonDisabled,
-                      ]}
+                      className={`flex-1 flex-row items-center justify-center gap-2 rounded-lg py-3 ${
+                        notesRevealed ? 'bg-emerald-500' : 'bg-primary'
+                      }`}
                       onPress={revealNotes}
                       disabled={notesRevealed}
                     >
                       {notesRevealed ? (
                         <>
-                          <Eye size={16} color="#10B981" />
-                          <Text style={styles.revealButtonTextRevealed}>
+                          <Eye size={16} color="rgb(16, 185, 129)" />{/* emerald-500 */}
+                          <Text className="text-white text-sm font-semibold">
                             Notes Revealed
                           </Text>
                         </>
                       ) : (
                         <>
-                          <EyeOff size={16} color="#FFFFFF" />
-                          <Text style={styles.revealButtonText}>
+                          <EyeOff size={16} color="rgb(255, 255, 255)" />{/* white */}
+                          <Text className="text-white text-sm font-semibold">
                             Reveal Notes
                           </Text>
                         </>
@@ -644,15 +640,15 @@ export default function ClubDetailScreen() {
               )}
             </View>
           ) : (
-            <View style={styles.emptyState}>
-              <BookOpen size={48} color="#9CA3AF" />
-              <Text style={styles.emptyText}>No current book selected</Text>
+            <View className="bg-white rounded-xl p-8 items-center shadow-md">
+              <BookOpen size={48} color="rgb(156, 163, 175)" />{/* gray-400 */}
+              <Text className="text-base text-gray-600 mt-3 mb-4">No current book selected</Text>
               {isAdmin && (
                 <TouchableOpacity
-                  style={styles.primaryButton}
+                  className="bg-blue-500 rounded-lg px-4 py-3"
                   onPress={() => setShowBookModal(true)}
                 >
-                  <Text style={styles.primaryButtonText}>Select Book</Text>
+                  <Text className="text-white text-sm font-semibold">Select Book</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -660,39 +656,39 @@ export default function ClubDetailScreen() {
         </View>
 
         {/* Meetings Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Upcoming Meetings</Text>
+        <View className="mb-6">
+          <View className="flex flex-row justify-between items-center mb-4">
+            <Text className="text-xl font-semibold text-gray-800">Upcoming Meetings</Text>
             {isAdmin && (
               <TouchableOpacity
-                style={styles.actionButton}
+                className="p-2"
                 onPress={() => setShowMeetingModal(true)}
               >
-                <Plus size={16} color="#3B82F6" />
+                <Plus size={16} color="rgb(59, 130, 246)" />{/* blue-500 */}
               </TouchableOpacity>
             )}
           </View>
 
           {meetings.length === 0 ? (
-            <View style={styles.emptyCard}>
-              <Calendar size={24} color="#9CA3AF" />
-              <Text style={styles.emptyCardText}>No upcoming meetings</Text>
+            <View className="bg-white rounded-xl p-6 items-center shadow-md">
+              <Calendar size={24} color="rgb(156, 163, 175)" />{/* gray-400 */}
+              <Text className="text-sm text-gray-400 mt-2">No upcoming meetings</Text>
             </View>
           ) : (
-            <View style={styles.meetingsList}>
+            <View className="gap-3">
               {meetings.map((meeting) => (
-                <View key={meeting.id} style={styles.meetingCard}>
-                  <Text style={styles.meetingTitle}>{meeting.title}</Text>
-                  <Text style={styles.meetingDate}>
+                <View key={meeting.id} className="bg-white rounded-xl p-4 shadow-md">
+                  <Text className="text-base font-semibold text-gray-800 mb-1">{meeting.title}</Text>
+                  <Text className="text-sm text-gray-600 mb-1">
                     {formatDate(meeting.date_time)}
                   </Text>
                   {meeting.location && (
-                    <Text style={styles.meetingLocation}>
+                    <Text className="text-sm text-gray-600 mb-0.5">
                       📍 {meeting.location}
                     </Text>
                   )}
                   {meeting.virtual_link && (
-                    <Text style={styles.meetingLink}>🔗 Virtual Meeting</Text>
+                    <Text className="text-sm text-blue-500">🔗 Virtual Meeting</Text>
                   )}
                 </View>
               ))}
@@ -700,54 +696,54 @@ export default function ClubDetailScreen() {
           )}
         </View>
 
-        
-        <Members initialClub={club} bookClubId={bookClubId} />
 
-        
-        
+        {isAdmin && <Members initialClub={club} bookClubId={bookClubId} isAdmin={isAdmin} />}
+        <Text className="color-red-500"> Test </Text>
+
+
+
         {/* Members Section */}
         {isAdmin && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Members ({members.length})</Text>
-            <View style={styles.membersList}>
+          <View className="mb-6">
+            <Text className="text-xl font-semibold text-gray-800">Members ({members.length})</Text>
+            <View className="gap-3">
               {members.map((member) => (
-                <View key={member.id} style={styles.memberCard}>
-                  <View style={styles.memberInfo}>
-                    <Text style={styles.memberName}>
-                      {member.profiles.display_name || member.profiles.email}
+                <View key={member.id} className="bg-white rounded-xl p-4 flex flex-row justify-between items-center shadow-md">
+                  <View className="flex-1">
+                    <Text className="text-base font-semibold text-gray-800 mb-0.5">
+                      {member.profiles?.display_name || member.profiles?.email || 'Unknown User'}
                     </Text>
-                    <Text style={styles.memberEmail}>
-                      {member.profiles.email}
+                    <Text className="text-sm text-gray-600 mb-1">
+                      {member.profiles?.email}
                     </Text>
                     <Text
-                      style={[
-                        styles.memberStatus,
-                        member.status === 'approved' && styles.statusApproved,
-                        member.status === 'pending' && styles.statusPending,
-                      ]}
+                      className={`text-xs font-semibold uppercase ${
+                        member.status === 'approved' ? 'text-emerald-500' :
+                        member.status === 'pending' ? 'text-amber-500' : ''
+                      }`}
                     >
                       {member.status}
                     </Text>
                   </View>
 
-                  <View style={styles.memberActions}>
+                  <View className="flex flex-row gap-2">
                     {member.status === 'pending' && (
                       <>
                         <TouchableOpacity
-                          style={styles.approveButton}
+                          className="bg-emerald-500 rounded-md px-3 py-1.5"
                           onPress={() =>
                             updateMemberStatus(member.id, 'approved')
                           }
                         >
-                          <Text style={styles.approveButtonText}>Approve</Text>
+                          <Text className="text-white text-xs font-semibold">Approve</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                          style={styles.declineButton}
+                          className="bg-red-500 rounded-md px-3 py-1.5"
                           onPress={() =>
                             updateMemberStatus(member.id, 'declined')
                           }
                         >
-                          <Text style={styles.declineButtonText}>Decline</Text>
+                          <Text className="text-white text-xs font-semibold">Decline</Text>
                         </TouchableOpacity>
                       </>
                     )}
@@ -755,10 +751,10 @@ export default function ClubDetailScreen() {
                     {member.status === 'approved' &&
                       member.user_id !== club.admin_user_id && (
                         <TouchableOpacity
-                          style={styles.removeButton}
+                          className="p-2"
                           onPress={() => removeMember(member.id)}
                         >
-                          <UserMinus size={16} color="#EF4444" />
+                          <UserMinus size={16} color="rgb(239, 68, 68)" />{/* red-500 */}
                         </TouchableOpacity>
                       )}
                   </View>
@@ -767,7 +763,7 @@ export default function ClubDetailScreen() {
             </View>
           </View>
         )}
-      </ScrollView>
+      {/* </ScrollView> */}
 
       {/* Book Selection Modal */}
       <Modal
@@ -775,53 +771,53 @@ export default function ClubDetailScreen() {
         animationType="slide"
         presentationStyle="pageSheet"
       >
-        <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
+        <SafeAreaView className="flex-1 bg-white">
+          <View className="flex-row justify-between items-center p-5 border-b border-gray-200">
             <TouchableOpacity onPress={() => setShowBookModal(false)}>
-              <Text style={styles.cancelText}>Cancel</Text>
+              <Text className="text-base text-gray-600">Cancel</Text>
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>Select Current Book</Text>
-            <View style={styles.placeholder} />
+            <Text className="text-lg font-semibold text-gray-800">Select Current Book</Text>
+            <View className="w-15" />
           </View>
 
-          <View style={styles.modalContent}>
-            <View style={styles.searchContainer}>
+          <View className="flex-1 p-5">
+            <View className="flex-row items-center bg-gray-50 rounded-xl px-4 py-3 mb-5 gap-3">
               <TextInput
-                style={styles.searchInput}
+                className="flex-1 text-base text-gray-800"
                 placeholder="Search for books..."
                 value={bookSearch}
                 onChangeText={setBookSearch}
                 onSubmitEditing={searchForBooks}
               />
               <TouchableOpacity onPress={searchForBooks} disabled={searching}>
-                <Text style={styles.searchButton}>
+                <Text className="text-base text-blue-500 font-semibold">
                   {searching ? 'Searching...' : 'Search'}
                 </Text>
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.searchResults}>
+            <ScrollView className="flex-1">
               {bookResults.map((book, index) => (
                 <TouchableOpacity
                   key={index}
-                  style={styles.searchResultCard}
+                  className="flex-row bg-gray-50 rounded-xl p-3 mb-3 gap-3"
                   onPress={() => setCurrentBook(book)}
                 >
                   {book.cover_url ? (
                     <Image
                       source={{ uri: book.cover_url }}
-                      style={styles.resultCover}
+                      className="w-12.5 h-18.75 rounded-md"
                     />
                   ) : (
-                    <View style={styles.resultPlaceholder}>
-                      <Text style={styles.placeholderText}>📚</Text>
+                    <View className="w-12.5 h-18.75 bg-gray-200 rounded-md justify-center items-center">
+                      <Text className="text-3xl">📚</Text>
                     </View>
                   )}
-                  <View style={styles.resultInfo}>
-                    <Text style={styles.resultTitle}>{book.title}</Text>
-                    <Text style={styles.resultAuthor}>{book.author}</Text>
+                  <View className="flex-1">
+                    <Text className="text-base font-semibold text-gray-800 mb-1">{book.title}</Text>
+                    <Text className="text-sm text-gray-600 mb-1">{book.author}</Text>
                     {book.page_count && (
-                      <Text style={styles.resultPages}>
+                      <Text className="text-xs text-gray-400">
                         {book.page_count} pages
                       </Text>
                     )}
@@ -839,22 +835,22 @@ export default function ClubDetailScreen() {
         animationType="slide"
         presentationStyle="pageSheet"
       >
-        <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
+        <SafeAreaView className="flex-1 bg-white">
+          <View className="flex-row justify-between items-center p-5 border-b border-gray-200">
             <TouchableOpacity onPress={() => setShowMeetingModal(false)}>
-              <Text style={styles.cancelText}>Cancel</Text>
+              <Text className="text-base text-gray-600">Cancel</Text>
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>Schedule Meeting</Text>
+            <Text className="text-lg font-semibold text-gray-800">Schedule Meeting</Text>
             <TouchableOpacity onPress={createMeeting}>
-              <Text style={styles.saveText}>Create</Text>
+              <Text className="text-base text-blue-500 font-semibold">Create</Text>
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.modalContent}>
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Meeting Title *</Text>
+          <ScrollView className="flex-1 p-5">
+            <View className="mb-6">
+              <Text className="text-base font-semibold text-gray-800 mb-2">Meeting Title *</Text>
               <TextInput
-                style={styles.input}
+                className="border border-gray-300 rounded-xl p-4 text-base bg-gray-50"
                 placeholder="e.g., Book Discussion"
                 value={meetingForm.title}
                 onChangeText={(text) =>
@@ -863,10 +859,10 @@ export default function ClubDetailScreen() {
               />
             </View>
 
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Date & Time *</Text>
+            <View className="mb-6">
+              <Text className="text-base font-semibold text-gray-800 mb-2">Date & Time *</Text>
               <TextInput
-                style={styles.input}
+                className="border border-gray-300 rounded-xl p-4 text-base bg-gray-50"
                 placeholder="YYYY-MM-DD HH:MM"
                 value={meetingForm.date_time}
                 onChangeText={(text) =>
@@ -875,10 +871,10 @@ export default function ClubDetailScreen() {
               />
             </View>
 
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Location</Text>
+            <View className="mb-6">
+              <Text className="text-base font-semibold text-gray-800 mb-2">Location</Text>
               <TextInput
-                style={styles.input}
+                className="border border-gray-300 rounded-xl p-4 text-base bg-gray-50"
                 placeholder="Physical location"
                 value={meetingForm.location}
                 onChangeText={(text) =>
@@ -887,10 +883,10 @@ export default function ClubDetailScreen() {
               />
             </View>
 
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Virtual Link</Text>
+            <View className="mb-6">
+              <Text className="text-base font-semibold text-gray-800 mb-2">Virtual Link</Text>
               <TextInput
-                style={styles.input}
+                className="border border-gray-300 rounded-xl p-4 text-base bg-gray-50"
                 placeholder="Zoom, Meet, etc."
                 value={meetingForm.virtual_link}
                 onChangeText={(text) =>
@@ -908,22 +904,22 @@ export default function ClubDetailScreen() {
         animationType="slide"
         presentationStyle="pageSheet"
       >
-        <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
+        <SafeAreaView className="flex-1 bg-white">
+          <View className="flex-row justify-between items-center p-5 border-b border-gray-200">
             <TouchableOpacity onPress={() => setShowNotesModal(false)}>
-              <Text style={styles.cancelText}>Cancel</Text>
+              <Text className="text-base text-gray-600">Cancel</Text>
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>My Notes & Questions</Text>
+            <Text className="text-lg font-semibold text-gray-800">My Notes & Questions</Text>
             <TouchableOpacity onPress={saveNotes}>
-              <Text style={styles.saveText}>Save</Text>
+              <Text className="text-base text-blue-500 font-semibold">Save</Text>
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.modalContent}>
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Notes</Text>
+          <ScrollView className="flex-1 p-5">
+            <View className="mb-6">
+              <Text className="text-base font-semibold text-gray-800 mb-2">Notes</Text>
               <TextInput
-                style={[styles.input, styles.textArea]}
+                className="border border-gray-300 rounded-xl p-4 text-base bg-gray-50 h-30 align-text-top"
                 placeholder="Your thoughts, observations, favorite quotes..."
                 value={notesForm.notes}
                 onChangeText={(text) =>
@@ -934,10 +930,10 @@ export default function ClubDetailScreen() {
               />
             </View>
 
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Discussion Questions</Text>
+            <View className="mb-6">
+              <Text className="text-base font-semibold text-gray-800 mb-2">Discussion Questions</Text>
               <TextInput
-                style={[styles.input, styles.textArea]}
+                className="border border-gray-300 rounded-xl p-4 text-base bg-gray-50 h-30 align-text-top"
                 placeholder="Questions you'd like to discuss with the group..."
                 value={notesForm.questions}
                 onChangeText={(text) =>
@@ -948,8 +944,8 @@ export default function ClubDetailScreen() {
               />
             </View>
 
-            <View style={styles.privacyNotice}>
-              <Text style={styles.privacyText}>
+            <View className="bg-blue-50 rounded-lg p-4 mt-4">
+              <Text className="text-sm text-blue-800 text-center">
                 🔒 Your notes and questions are private until the admin reveals
                 them for group discussion.
               </Text>
@@ -960,443 +956,3 @@ export default function ClubDetailScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorText: {
-    fontSize: 16,
-    color: '#EF4444',
-  },
-  scrollContent: {
-    padding: 20,
-  },
-  header: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 24,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  clubName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1F2937',
-    marginBottom: 8,
-  },
-  clubDescription: {
-    fontSize: 16,
-    color: '#6B7280',
-    marginBottom: 12,
-  },
-  adminBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    alignSelf: 'flex-start',
-  },
-  adminText: {
-    fontSize: 14,
-    color: '#F59E0B',
-    fontWeight: '600',
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#1F2937',
-  },
-  actionButton: {
-    padding: 8,
-  },
-  bookCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  bookContent: {
-    flexDirection: 'row',
-    gap: 16,
-    marginBottom: 16,
-  },
-  bookCover: {
-    width: 80,
-    height: 120,
-    borderRadius: 8,
-  },
-  placeholderCover: {
-    width: 80,
-    height: 120,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  placeholderText: {
-    fontSize: 32,
-  },
-  bookInfo: {
-    flex: 1,
-  },
-  bookTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 4,
-  },
-  bookAuthor: {
-    fontSize: 16,
-    color: '#6B7280',
-    marginBottom: 8,
-  },
-  bookPages: {
-    fontSize: 14,
-    color: '#9CA3AF',
-    marginBottom: 8,
-  },
-  bookSynopsis: {
-    fontSize: 14,
-    color: '#6B7280',
-    lineHeight: 20,
-  },
-  bookActions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  notesButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#3B82F6',
-    borderRadius: 8,
-    paddingVertical: 12,
-  },
-  notesButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  revealButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#EF4444',
-    borderRadius: 8,
-    paddingVertical: 12,
-  },
-  revealButtonDisabled: {
-    backgroundColor: '#10B981',
-  },
-  revealButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  revealButtonTextRevealed: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  emptyState: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 32,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#6B7280',
-    marginTop: 12,
-    marginBottom: 16,
-  },
-  primaryButton: {
-    backgroundColor: '#3B82F6',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  primaryButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  emptyCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 24,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  emptyCardText: {
-    fontSize: 14,
-    color: '#9CA3AF',
-    marginTop: 8,
-  },
-  meetingsList: {
-    gap: 12,
-  },
-  meetingCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  meetingTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 4,
-  },
-  meetingDate: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginBottom: 4,
-  },
-  meetingLocation: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginBottom: 2,
-  },
-  meetingLink: {
-    fontSize: 14,
-    color: '#3B82F6',
-  },
-  membersList: {
-    gap: 12,
-  },
-  memberCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  memberInfo: {
-    flex: 1,
-  },
-  memberName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 2,
-  },
-  memberEmail: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginBottom: 4,
-  },
-  memberStatus: {
-    fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-  },
-  statusApproved: {
-    color: '#10B981',
-  },
-  statusPending: {
-    color: '#F59E0B',
-  },
-  memberActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  approveButton: {
-    backgroundColor: '#10B981',
-    borderRadius: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  approveButtonText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  declineButton: {
-    backgroundColor: '#EF4444',
-    borderRadius: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  declineButtonText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  removeButton: {
-    padding: 8,
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
-  },
-  cancelText: {
-    fontSize: 16,
-    color: '#6B7280',
-  },
-  saveText: {
-    fontSize: 16,
-    color: '#3B82F6',
-    fontWeight: '600',
-  },
-  placeholder: {
-    width: 60,
-  },
-  modalContent: {
-    flex: 1,
-    padding: 20,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginBottom: 20,
-    gap: 12,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: '#1F2937',
-  },
-  searchButton: {
-    fontSize: 16,
-    color: '#3B82F6',
-    fontWeight: '600',
-  },
-  searchResults: {
-    flex: 1,
-  },
-  searchResultCard: {
-    flexDirection: 'row',
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
-    gap: 12,
-  },
-  resultCover: {
-    width: 50,
-    height: 75,
-    borderRadius: 6,
-  },
-  resultPlaceholder: {
-    width: 50,
-    height: 75,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 6,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  resultInfo: {
-    flex: 1,
-  },
-  resultTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 4,
-  },
-  resultAuthor: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginBottom: 4,
-  },
-  resultPages: {
-    fontSize: 12,
-    color: '#9CA3AF',
-  },
-  formGroup: {
-    marginBottom: 24,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    backgroundColor: '#F9FAFB',
-  },
-  textArea: {
-    height: 120,
-    textAlignVertical: 'top',
-  },
-  privacyNotice: {
-    backgroundColor: '#EFF6FF',
-    borderRadius: 8,
-    padding: 16,
-    marginTop: 16,
-  },
-  privacyText: {
-    fontSize: 14,
-    color: '#1E40AF',
-    textAlign: 'center',
-  },
-});
