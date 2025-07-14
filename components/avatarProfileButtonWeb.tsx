@@ -22,12 +22,15 @@ interface AvatarProfileButtonWebProps {
 
 export default function AvatarProfileButtonWeb({ avatarUrl }: AvatarProfileButtonWebProps) {
   return (
-    <Link href="/account" asChild>
+    <Link href="/profile" asChild>
       <Button
         variant="ghost" // Use ghost variant for a subtle button
         className="w-10 h-10 rounded-full p-0 flex items-center justify-center
-                   bg-primary-dark border border-transparent
-                   hover:border-secondary-light hover:scale-105 active:scale-95 transition-transform duration-150"
+                   border border-transparent
+                   bg-primary/30
+                   hover:bg-primary/90
+                   hover:border-secondary-light 
+                   hover:scale-105 active:scale-95 transition-transform duration-150"
       >
         {avatarUrl ? (
           // In a real app, you'd use a proper Image component or shadcn AvatarImage
