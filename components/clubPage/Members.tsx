@@ -1,9 +1,8 @@
 import { supabase } from "@/lib/supabase";
 import { useEffect, useState } from "react";
-import { View , Text, TouchableOpacity, Alert} from "react-native";
-import { UserMinus } from 'lucide-react-native';
-import { User } from "@supabase/supabase-js";
+import { View , Text, Alert} from "react-native";
 import { useAuth } from "@/contexts/AuthContext";
+import ClubMemberCard from "./ClubMemberCard";
 
 interface Member {
   id: string;
@@ -14,6 +13,15 @@ interface Member {
     display_name: string | null;
     email: string;
   };
+}
+
+interface PublicClubMember {
+  id: string;
+  user_id: string;
+  status: 'pending' | 'approved' | 'declined';
+  created_at: string;
+  display_name: string | null;
+  profile_picture_url: string | null;
 }
 
 
@@ -46,25 +54,20 @@ interface ClubDetails {
 interface MembersProps {
   bookClubId: string;
   initialClub: ClubDetails | null;
+  isAdmin: boolean;
 }
 
-//todo pass club object?
-export default function Members({ initialClub, bookClubId }: MembersProps) {
+export default function Members({ initialClub, bookClubId, isAdmin }: MembersProps) {
   
   const [members, setMembers] = useState<Member[]>([]);
+  const [clubMembers, setClubMembers] = useState<PublicClubMember[]>([]);
   const user = useAuth();
-  // const bookClubId = ''
-  // const user = null;
-  const isAdmin = true
   const [club, setClub] = useState<ClubDetails | null>(initialClub);
   
   
   useEffect(() => {
     if (bookClubId && user) {
-      // loadClubDetails();
       loadMembers();
-      // loadUserNotes();
-      // loadMeetings();
     }
   }, [bookClubId, user]);
   
@@ -73,27 +76,23 @@ export default function Members({ initialClub, bookClubId }: MembersProps) {
       console.log("book club id")
       console.log(bookClubId)
       const { data, error: memberError } = await supabase
-        .from('club_members')
-        .select(
-          `
-          *,
-          profiles (
-            display_name,
-            email
-          )
-        `,
-        )
+        .from('club_members_public_view')
+        .select( '*' )
+
         .eq('club_id', bookClubId)
         .order('created_at', { ascending: true });
+      console.log("Members page")
+      console.log(data)
+      console.log(memberError)
 
       if (data) {
         setMembers(data);
+        setClubMembers(data);
       }
     } catch (error) {
       console.error('Error loading members:', error);
     }
   };
-  
 
   
   const updateMemberStatus = async (
@@ -114,36 +113,7 @@ export default function Members({ initialClub, bookClubId }: MembersProps) {
       Alert.alert('Error', error.message);
     }
   };
-
-  const removeMember = async (memberId: string) => {
-    Alert.alert(
-      'Remove Member',
-      'Are you sure you want to remove this member?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const { error } = await supabase
-                .from('club_members')
-                .delete()
-                .eq('id', memberId);
-
-              if (error) throw error;
-
-              loadMembers();
-              Alert.alert('Success', 'Member removed!');
-            } catch (error: any) {
-              Alert.alert('Error', error.message);
-            }
-          },
-        },
-      ],
-    );
-  };
-
+  
   return (
     <>
       {/* Members Section */}
@@ -151,71 +121,17 @@ export default function Members({ initialClub, bookClubId }: MembersProps) {
         // Styles converted: marginBottom: 24 -> mb-6
         <View className="mb-6">
           {/* Styles converted: fontSize: 20, fontWeight: '600', color: '#1F2937' -> text-xl, font-inter-semibold, text-foreground */}
-          <Text className="text-xl font-inter-semibold text-foreground">
+          <Text className="text-xl font-inter-semibold text-foreground font-semibold">
             Members ({members.length})
           </Text>
           <View className="gap-3">
-            {members.map((member) => (
-              <View key={member.id} className="bg-card rounded-lg p-4 flex-row justify-between items-center shadow-md">
-                <View className="flex-1">
-                  <Text className="text-base font-inter-semibold text-foreground mb-0.5">
-                    {member.profiles.display_name || member.profiles.email}
-                  </Text>
-                  <Text className="text-sm text-muted-foreground mb-1">
-                    {member.profiles.email}
-                  </Text>
-                  <Text
-                    className={`
-                      text-xs font-inter-semibold uppercase
-                      ${member.status === 'approved' ? 'text-green-500' : ''}
-                      ${member.status === 'pending' ? 'text-amber-500' : ''}
-                    `}
-                  >
-                    {member.status}
-                  </Text>
-                </View>
-  
-                <View className="flex-row gap-2">
-                  {member.status === 'pending' && (
-                    <>
-                      <TouchableOpacity
-                        // Styles converted: backgroundColor: '#10B981', borderRadius: 6, paddingHorizontal: 12, paddingVertical: 6
-                        className="bg-green-500 rounded-md px-3 py-1.5"
-                        onPress={() =>
-                          updateMemberStatus(member.id, 'approved')
-                        }
-                      >
-                        {/* Styles converted: color: '#FFFFFF', fontSize: 12, fontWeight: '600' */}
-                        <Text className="text-white text-xs font-inter-semibold">Approve</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        // Styles converted: backgroundColor: '#EF4444', borderRadius: 6, paddingHorizontal: 12, paddingVertical: 6
-                        className="bg-red-500 rounded-md px-3 py-1.5"
-                        onPress={() =>
-                          updateMemberStatus(member.id, 'declined')
-                        }
-                      >
-                        {/* Styles converted: color: '#FFFFFF', fontSize: 12, fontWeight: '600' */}
-                        <Text className="text-white text-xs font-inter-semibold">Decline</Text>
-                      </TouchableOpacity>
-                    </>
-                  )}
-  
-                  {member.status === 'approved' &&
-                    member.user_id !== club.admin_user_id && (
-                      <TouchableOpacity
-                        // Styles converted: padding: 8 -> p-2
-                        className="p-2"
-                        onPress={() => removeMember(member.id)}
-                      >
-                        {/* Assuming UserMinus is from lucide-react-native, its color can be set dynamically */}
-                        <UserMinus size={16} color="#EF4444" />
-                      </TouchableOpacity>
-                    )}
-                </View>
-              </View>
-            ))}
+            {clubMembers.map((member) => (
+              <ClubMemberCard key={member.id} member={member} club_admin_user_id={club?.admin_user_id || null}
+              loadMembers={loadMembers} updateMemberStatus={updateMemberStatus}/>
+            ))
+            }
           </View>
+              
         </View>
       )}
     </>
