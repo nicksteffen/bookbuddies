@@ -25,8 +25,7 @@ import {
   MessageSquare,
 } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';
-// import { useAuth } from '@/contexts/AuthContext';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { searchBooks } from '@/lib/api';
 import Members from '@/components/clubPage/Members';
 
@@ -537,7 +536,7 @@ export default function ClubDetailScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
-      {/* <ScrollView contentContainerStyle={{ padding: 20 }}> */}
+      <ScrollView contentContainerStyle={{ padding: 20 }}>
         {/* Club Header */}
         <View className="bg-white rounded-xl p-6 mb-6 shadow-md">
           <Text className="text-2xl font-bold text-gray-800 mb-2">{club.name}</Text>
@@ -696,74 +695,8 @@ export default function ClubDetailScreen() {
           )}
         </View>
 
-
         {isAdmin && <Members initialClub={club} bookClubId={bookClubId} isAdmin={isAdmin} />}
-        <Text className="color-red-500"> Test </Text>
-
-
-
-        {/* Members Section */}
-        {isAdmin && (
-          <View className="mb-6">
-            <Text className="text-xl font-semibold text-gray-800">Members ({members.length})</Text>
-            <View className="gap-3">
-              {members.map((member) => (
-                <View key={member.id} className="bg-white rounded-xl p-4 flex flex-row justify-between items-center shadow-md">
-                  <View className="flex-1">
-                    <Text className="text-base font-semibold text-gray-800 mb-0.5">
-                      {member.profiles?.display_name || member.profiles?.email || 'Unknown User'}
-                    </Text>
-                    <Text className="text-sm text-gray-600 mb-1">
-                      {member.profiles?.email}
-                    </Text>
-                    <Text
-                      className={`text-xs font-semibold uppercase ${
-                        member.status === 'approved' ? 'text-emerald-500' :
-                        member.status === 'pending' ? 'text-amber-500' : ''
-                      }`}
-                    >
-                      {member.status}
-                    </Text>
-                  </View>
-
-                  <View className="flex flex-row gap-2">
-                    {member.status === 'pending' && (
-                      <>
-                        <TouchableOpacity
-                          className="bg-emerald-500 rounded-md px-3 py-1.5"
-                          onPress={() =>
-                            updateMemberStatus(member.id, 'approved')
-                          }
-                        >
-                          <Text className="text-white text-xs font-semibold">Approve</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          className="bg-red-500 rounded-md px-3 py-1.5"
-                          onPress={() =>
-                            updateMemberStatus(member.id, 'declined')
-                          }
-                        >
-                          <Text className="text-white text-xs font-semibold">Decline</Text>
-                        </TouchableOpacity>
-                      </>
-                    )}
-
-                    {member.status === 'approved' &&
-                      member.user_id !== club.admin_user_id && (
-                        <TouchableOpacity
-                          className="p-2"
-                          onPress={() => removeMember(member.id)}
-                        >
-                          <UserMinus size={16} color="rgb(239, 68, 68)" />{/* red-500 */}
-                        </TouchableOpacity>
-                      )}
-                  </View>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
-      {/* </ScrollView> */}
+      </ScrollView>
 
       {/* Book Selection Modal */}
       <Modal
