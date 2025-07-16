@@ -29,6 +29,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { searchBooks } from '@/lib/api';
 import Members from '@/components/clubPage/Members';
 import CurrentBookSection from '@/components/clubPage/CurrentBookSection';
+import BookSelectionModal from '@/components/clubPage/BookSelectionModal';
 
 interface ClubDetails {
   id: string;
@@ -129,6 +130,7 @@ export default function ClubDetailScreen() {
   }, [bookClubId, user]);
 
   const loadClubDetails = async () => {
+    console.log("parent load clubn detials")
     try {
       const { data: testData, error: testError } = await supabase
         .from('book_clubs')
@@ -475,7 +477,7 @@ export default function ClubDetailScreen() {
           )}
         </View>
 
-        <CurrentBookSection initialClub={club} isAdmin={isAdmin} isMember={isMember} bookClubId={club.id} />
+        <CurrentBookSection loadClubDetails={loadClubDetails} initialClub={club} isAdmin={isAdmin} isMember={isMember} bookClubId={club.id} />
 
         {/* Current Book Section */}
         <View className="mb-6">
@@ -626,14 +628,15 @@ export default function ClubDetailScreen() {
         )}
       </ScrollView>
 
-      {{REWRITTEN_CODE}}
-            {/* Book Selection Modal */}
-            <BookSelectionModal
-              isVisible={showBookModal}
-              onClose={() => setShowBookModal(false)}
-              bookClubId={bookClubId}
-              onBookSelected={loadClubDetails}
-            />
+      {/* Book Selection Modal */}
+      
+      
+      <BookSelectionModal
+        isVisible={showBookModal}
+        onClose={() => setShowBookModal(false)}
+        bookClubId={bookClubId}
+        onBookSelected={loadClubDetails}
+      />
 
       {/* Meeting Creation Modal */}
       <Modal

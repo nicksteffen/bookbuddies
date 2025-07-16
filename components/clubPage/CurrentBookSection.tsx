@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Image, View, TouchableOpacity, Modal, SafeAreaView, ScrollView, TextInput, Text, Platform, PlatformColor } from "react-native";
 import RevealNotesButton from "./RevealNotesButton";
 import { Button } from "../ui/button";
+import BookSelectionModal from "./BookSelectionModal";
 
 interface ClubDetails {
   id: string;
@@ -30,22 +31,25 @@ interface ClubDetails {
 }
 
 interface CurrentBookSectionProps {
-  initialClub?: ClubDetails;
+  initialClub: ClubDetails;
   isAdmin: boolean;
   isMember: boolean;
   bookClubId: string;
+  loadClubDetails: () => Promise<void>;
 }
 
-export default function CurrentBookSection({ initialClub, isAdmin, isMember, bookClubId } : CurrentBookSectionProps) {
+export default function CurrentBookSection({ loadClubDetails, initialClub, isAdmin, isMember, bookClubId } : CurrentBookSectionProps) {
   
   const [showBookModal, setShowBookModal] = useState(false);
   const [showNotesModal, setShowNotesModal] = useState(false);
-  const [club, setClub] = useState(initialClub || null);
+  const [club, setClub] = useState<ClubDetails>(initialClub);
   // const [notesRevealed, setNotesRevealed] = useState(false);
   useEffect(() => {
-    
+    console.log("ciurrent section use effect")
+   // loadClubDetails() 
+    setClub(initialClub);
 
-  }, []);
+  }, [initialClub]);
 
   return (
     <>
@@ -94,7 +98,7 @@ export default function CurrentBookSection({ initialClub, isAdmin, isMember, boo
               )}
             </View>
           </View>
-          <RevealNotesButton initialClub={club} />
+          <RevealNotesButton initialClub={club} onUpdate={loadClubDetails} />
 
 
         </View>
@@ -116,6 +120,13 @@ export default function CurrentBookSection({ initialClub, isAdmin, isMember, boo
     
     <Text> Notes modal</Text>
     <Text> set book modal</Text>
+    <BookSelectionModal
+      isVisible={showBookModal}
+      onClose={() => setShowBookModal(false)}
+      bookClubId={bookClubId}
+      onBookSelected={loadClubDetails}
+    />
+    
 
     </>
     

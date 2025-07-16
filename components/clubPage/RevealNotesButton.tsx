@@ -3,7 +3,7 @@
 import { supabase } from '@/lib/supabase';
 import { ClubDetails } from '@/types/club';
 import { Eye, EyeOff, MessageSquare } from 'lucide-react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Platform, TouchableOpacity, Text, Alert, View } from 'react-native';
 import {
   AlertDialog,
@@ -21,17 +21,23 @@ import NotesModal from './NotesModal';
 
 interface RevealNotesButtonProps {
   initialClub: ClubDetails;
-  loadClubDetails: () => Promise<void>;
+  onUpdate: () => Promise<void>;
 }
 
 export default function RevealNotesButton({
-  initialClub,
+  initialClub, onUpdate
 }: RevealNotesButtonProps) {
   const [club, setClub] = useState(initialClub);
   const [showConfirm, setShowConfirm] = useState(false);
   const revealHeader = 'Reveal Notes & Questions';
   const revealDescription =
     'This will make all member notes and questions visible to everyone in the club. This action cannot be undone.';
+  
+  useEffect(() => {
+    setClub(initialClub);
+  }, [initialClub]);
+  
+  
   const revealNotesAction = async () => {
     const { error } = await supabase
       .from('club_books')
@@ -39,7 +45,9 @@ export default function RevealNotesButton({
       .eq('club_id', club.id)
       .eq('book_id', club?.current_book_id);
     if (!error) {
-      loadClubDetails();
+      console.log("no error, call onUpdate")
+      onUpdate();
+      // loadClubDetails();
       // console.log('mock load club details');
     }
     return error;
@@ -82,7 +90,8 @@ export default function RevealNotesButton({
             >
               <MessageSquare size={16} color="rgb(255, 255, 255)" />
               {/* white */}
-              <Text className="text-white text-sm font-semibold">
+              <Text 
+                className="text-lg font-semibold text-gray-800">
                 {'My Notes & Questions'}
               </Text>
             </TouchableOpacity>
@@ -139,9 +148,9 @@ export default function RevealNotesButton({
           >
             <MessageSquare size={16} color="rgb(255, 255, 255)" />
             {/* white */}
-            <span className="text-white text-sm font-semibold">
-              {' '}
-              My Notes & Questions{' '}
+            <span
+              className="text-lg font-semibold text-gray-100">
+                My Notes & Questions
             </span>
           </Button>
           {isAdmin && (
