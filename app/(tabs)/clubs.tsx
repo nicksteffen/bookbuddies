@@ -293,7 +293,7 @@ export default function ClubsScreen() {
                       <Text className="text-destructive-foreground text-sm font-inter-semibold">Leave</Text>
                     </TouchableOpacity>
                   </View>
-                  {club.description && (
+                  {!!club.description && (
                     <Text className="text-sm text-muted-foreground mt-2">{club.description}</Text>
                   )}
                 </TouchableOpacity>
@@ -363,7 +363,7 @@ export default function ClubsScreen() {
                   )}
                 </View>
                 
-                {club.description && (
+                {!!club.description && (
                   <Text className="text-sm text-muted-foreground mt-2">{club.description}</Text>
                 )}
               </TouchableOpacity>

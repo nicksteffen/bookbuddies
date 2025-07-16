@@ -3,52 +3,53 @@ import { useEffect, useState } from "react";
 import { View , Text, Alert} from "react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import ClubMemberCard from "./ClubMemberCard";
+import { ClubDetails, Member, PublicClubMember } from "@/types/club";
 
-interface Member {
-  id: string;
-  user_id: string;
-  status: 'pending' | 'approved' | 'declined';
-  created_at: string;
-  profiles: {
-    display_name: string | null;
-    email: string;
-  };
-}
+// interface Member {
+//   id: string;
+//   user_id: string;
+//   status: 'pending' | 'approved' | 'declined';
+//   created_at: string;
+//   profiles: {
+//     display_name: string | null;
+//     email: string;
+//   };
+// }
 
-interface PublicClubMember {
-  id: string;
-  user_id: string;
-  status: 'pending' | 'approved' | 'declined';
-  created_at: string;
-  display_name: string | null;
-  profile_picture_url: string | null;
-}
-
-
+// interface PublicClubMember {
+//   id: string;
+//   user_id: string;
+//   status: 'pending' | 'approved' | 'declined';
+//   created_at: string;
+//   display_name: string | null;
+//   profile_picture_url: string | null;
+// }
 
 
-interface ClubDetails {
-  id: string;
-  name: string;
-  description: string | null;
-  privacy: 'public' | 'private' | 'secret';
-  admin_user_id: string;
-  current_book_id: string | null;
-  created_at: string;
-  current_book?: {
-    id: string;
-    title: string;
-    author: string;
-    cover_url: string | null;
-    synopsis: string | null;
-    page_count: number | null;
-  } | null;
-  club_books?: {
-    id: string;
-    notes_revealed: boolean;
-    average_rating: number | null;
-  }[];
-}
+
+
+// export interface ClubDetails {
+//   id: string;
+//   name: string;
+//   description: string | null;
+//   privacy: 'public' | 'private' | 'secret';
+//   admin_user_id: string;
+//   current_book_id: string | null;
+//   created_at: string;
+//   current_book?: {
+//     id: string;
+//     title: string;
+//     author: string;
+//     cover_url: string | null;
+//     synopsis: string | null;
+//     page_count: number | null;
+//   } | null;
+//   club_books?: {
+//     id: string;
+//     notes_revealed: boolean;
+//     average_rating: number | null;
+//   }[];
+// }
 
 
 interface MembersProps {
@@ -118,9 +119,7 @@ export default function Members({ initialClub, bookClubId, isAdmin }: MembersPro
     <>
       {/* Members Section */}
       {isAdmin && (
-        // Styles converted: marginBottom: 24 -> mb-6
         <View className="mb-6">
-          {/* Styles converted: fontSize: 20, fontWeight: '600', color: '#1F2937' -> text-xl, font-inter-semibold, text-foreground */}
           <Text className="text-xl font-inter-semibold text-foreground font-semibold">
             Members ({members.length})
           </Text>

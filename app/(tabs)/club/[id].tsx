@@ -28,6 +28,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { searchBooks } from '@/lib/api';
 import Members from '@/components/clubPage/Members';
+import CurrentBookSection from '@/components/clubPage/CurrentBookSection';
 
 interface ClubDetails {
   id: string;
@@ -49,6 +50,7 @@ interface ClubDetails {
     id: string;
     notes_revealed: boolean;
     average_rating: number | null;
+    book_id: string;
   }[];
 }
 
@@ -121,21 +123,16 @@ export default function ClubDetailScreen() {
     // console.log(bookClubId && user);
     if (bookClubId && user) {
       loadClubDetails();
-      loadMembers();
-      loadUserNotes();
+      // loadUserNotes();
       loadMeetings();
     }
   }, [bookClubId, user]);
 
   const loadClubDetails = async () => {
     try {
-      // console.log('loac club details');
       const { data: testData, error: testError } = await supabase
         .from('book_clubs')
         .select('*');
-
-      // console.log('testData');
-      // console.log(testData);
 
       const { data: currentClub, error: currentClubError } = await supabase
         .from('book_clubs')
@@ -153,7 +150,8 @@ export default function ClubDetailScreen() {
           club_books(
             id,
             notes_revealed,
-            average_rating
+            average_rating,
+            book_id
           )
         `,
         )
@@ -185,34 +183,6 @@ export default function ClubDetailScreen() {
       console.error('Error loading club details:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadMembers = async () => {
-    try {
-      console.log("book club id")
-      console.log(bookClubId)
-      const { data , error: memberError} = await supabase
-        .from('club_members')
-        .select(
-          `
-          *,
-          profiles (
-            display_name,
-            email
-          )
-        `,
-        )
-        .eq('club_id', bookClubId)
-        .order('created_at', { ascending: true });
-      console.log("members data - main page")
-      console.log(data)
-
-      if (data) {
-        setMembers(data);
-      }
-    } catch (error) {
-      console.error('Error loading members:', error);
     }
   };
 
@@ -453,53 +423,7 @@ export default function ClubDetailScreen() {
     );
   };
 
-  const updateMemberStatus = async (
-    memberId: string,
-    status: 'approved' | 'declined',
-  ) => {
-    try {
-      const { error } = await supabase
-        .from('club_members')
-        .update({ status })
-        .eq('id', memberId);
-
-      if (error) throw error;
-
-      loadMembers();
-      Alert.alert('Success', `Member ${status}!`);
-    } catch (error: any) {
-      Alert.alert('Error', error.message);
-    }
-  };
-
-  const removeMember = async (memberId: string) => {
-    Alert.alert(
-      'Remove Member',
-      'Are you sure you want to remove this member?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const { error } = await supabase
-                .from('club_members')
-                .delete()
-                .eq('id', memberId);
-
-              if (error) throw error;
-
-              loadMembers();
-              Alert.alert('Success', 'Member removed!');
-            } catch (error: any) {
-              Alert.alert('Error', error.message);
-            }
-          },
-        },
-      ],
-    );
-  };
+  
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -550,6 +474,8 @@ export default function ClubDetailScreen() {
             </View>
           )}
         </View>
+
+        <CurrentBookSection initialClub={club} isAdmin={isAdmin} isMember={isMember} bookClubId={club.id} />
 
         {/* Current Book Section */}
         <View className="mb-6">
@@ -695,72 +621,19 @@ export default function ClubDetailScreen() {
           )}
         </View>
 
-        {isAdmin && <Members initialClub={club} bookClubId={bookClubId} isAdmin={isAdmin} />}
+        {isAdmin && (
+          <Members initialClub={club} bookClubId={bookClubId} isAdmin={isAdmin} />
+        )}
       </ScrollView>
 
-      {/* Book Selection Modal */}
-      <Modal
-        visible={showBookModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
-      >
-        <SafeAreaView className="flex-1 bg-white">
-          <View className="flex-row justify-between items-center p-5 border-b border-gray-200">
-            <TouchableOpacity onPress={() => setShowBookModal(false)}>
-              <Text className="text-base text-gray-600">Cancel</Text>
-            </TouchableOpacity>
-            <Text className="text-lg font-semibold text-gray-800">Select Current Book</Text>
-            <View className="w-15" />
-          </View>
-
-          <View className="flex-1 p-5">
-            <View className="flex-row items-center bg-gray-50 rounded-xl px-4 py-3 mb-5 gap-3">
-              <TextInput
-                className="flex-1 text-base text-gray-800"
-                placeholder="Search for books..."
-                value={bookSearch}
-                onChangeText={setBookSearch}
-                onSubmitEditing={searchForBooks}
-              />
-              <TouchableOpacity onPress={searchForBooks} disabled={searching}>
-                <Text className="text-base text-blue-500 font-semibold">
-                  {searching ? 'Searching...' : 'Search'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView className="flex-1">
-              {bookResults.map((book, index) => (
-                <TouchableOpacity
-                  key={index}
-                  className="flex-row bg-gray-50 rounded-xl p-3 mb-3 gap-3"
-                  onPress={() => setCurrentBook(book)}
-                >
-                  {book.cover_url ? (
-                    <Image
-                      source={{ uri: book.cover_url }}
-                      className="w-12.5 h-18.75 rounded-md"
-                    />
-                  ) : (
-                    <View className="w-12.5 h-18.75 bg-gray-200 rounded-md justify-center items-center">
-                      <Text className="text-3xl">📚</Text>
-                    </View>
-                  )}
-                  <View className="flex-1">
-                    <Text className="text-base font-semibold text-gray-800 mb-1">{book.title}</Text>
-                    <Text className="text-sm text-gray-600 mb-1">{book.author}</Text>
-                    {book.page_count && (
-                      <Text className="text-xs text-gray-400">
-                        {book.page_count} pages
-                      </Text>
-                    )}
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        </SafeAreaView>
-      </Modal>
+      {{REWRITTEN_CODE}}
+            {/* Book Selection Modal */}
+            <BookSelectionModal
+              isVisible={showBookModal}
+              onClose={() => setShowBookModal(false)}
+              bookClubId={bookClubId}
+              onBookSelected={loadClubDetails}
+            />
 
       {/* Meeting Creation Modal */}
       <Modal

@@ -20,14 +20,6 @@ interface ClubMemberCardProps {
 
 export default function ClubMemberCard({ member, club_admin_user_id, updateMemberStatus, loadMembers }: ClubMemberCardProps) {
 
-  // const updateMemberStatus = async (memberId: string, status: 'approved' | 'declined') => {
-  //   console.log("update")
-  // };
-  // const removeMember = async (memberId: string) => {
-  //   console.log("remove")
-
-  // };÷
-
   return (
     <>
       <View key={member.id} className="bg-card rounded-lg p-4 flex-row justify-between items-center shadow-md">
@@ -50,23 +42,19 @@ export default function ClubMemberCard({ member, club_admin_user_id, updateMembe
           {member.status === 'pending' && (
             <>
               <TouchableOpacity
-                // Styles converted: backgroundColor: '#10B981', borderRadius: 6, paddingHorizontal: 12, paddingVertical: 6
                 className="bg-green-500 rounded-md px-3 py-1.5"
                 onPress={() =>
                   updateMemberStatus(member.id, 'approved')
                 }
               >
-                {/* Styles converted: color: '#FFFFFF', fontSize: 12, fontWeight: '600' */}
                 <Text className="text-white text-xs font-inter-semibold">Approve</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                // Styles converted: backgroundColor: '#EF4444', borderRadius: 6, paddingHorizontal: 12, paddingVertical: 6
                 className="bg-red-500 rounded-md px-3 py-1.5"
                 onPress={() =>
                   updateMemberStatus(member.id, 'declined')
                 }
               >
-                {/* Styles converted: color: '#FFFFFF', fontSize: 12, fontWeight: '600' */}
                 <Text className="text-white text-xs font-inter-semibold">Decline</Text>
               </TouchableOpacity>
             </>
@@ -77,15 +65,6 @@ export default function ClubMemberCard({ member, club_admin_user_id, updateMembe
           {member.status === 'approved' &&
             member.user_id !== club_admin_user_id && (
               <RemoveMemberButton memberId={member.id} reloadMember={loadMembers} />
-            // // isAdmin && (
-            //   <TouchableOpacity
-            //     // Styles converted: padding: 8 -> p-2
-            //     className="p-2"
-            //     onPress={() => removeMember(member.id)}
-            //   >
-            //     {/* Assuming UserMinus is from lucide-react-native, its color can be set dynamically */}
-            //     <UserMinus size={16} color="#EF4444" />
-            //   </TouchableOpacity>
             )}
         </View>
       </View>

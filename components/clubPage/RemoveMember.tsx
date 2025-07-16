@@ -27,10 +27,6 @@ export default function RemoveMemberButton({ memberId, reloadMember }: RemoveMem
     }
   }
   
-  const removeMemberWeb = () => {
-    setShowConfirm(true)
-  }
-  
   const removeMemberMobile = async (memberId: string) => {
     Alert.alert(
       'Remove Member',
