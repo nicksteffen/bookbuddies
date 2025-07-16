@@ -117,9 +117,6 @@ export default function CurrentBookSection({ loadClubDetails, initialClub, isAdm
         </View>
       )}
     </View>
-    
-    <Text> Notes modal</Text>
-    <Text> set book modal</Text>
     <BookSelectionModal
       isVisible={showBookModal}
       onClose={() => setShowBookModal(false)}
