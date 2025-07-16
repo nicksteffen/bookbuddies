@@ -479,109 +479,6 @@ export default function ClubDetailScreen() {
 
         <CurrentBookSection loadClubDetails={loadClubDetails} initialClub={club} isAdmin={isAdmin} isMember={isMember} bookClubId={club.id} />
 
-        {/* Current Book Section */}
-        <View className="mb-6">
-          <View className="flex flex-row justify-between items-center mb-4">
-            <Text className="text-xl font-semibold text-gray-800">Current Book</Text>
-            {isAdmin && (
-              <TouchableOpacity
-                className="p-2"
-                onPress={() => setShowBookModal(true)}
-              >
-                <Edit size={16} color="rgb(59, 130, 246)" />{/* blue-500 */}
-              </TouchableOpacity>
-            )}
-          </View>
-
-          {club.current_book ? (
-            <View className="bg-white rounded-xl p-4 shadow-md">
-              <View className="flex flex-row gap-4 mb-4">
-                {club.current_book.cover_url ? (
-                  <Image
-                    source={{ uri: club.current_book.cover_url }}
-                    className="w-20 h-30 rounded-lg"
-                  />
-                ) : (
-                  <View className="w-20 h-30 bg-gray-200 rounded-lg justify-center items-center">
-                    <Text className="text-3xl">📚</Text>
-                  </View>
-                )}
-                <View className="flex-1">
-                  <Text className="text-lg font-semibold text-gray-800 mb-1">
-                    {club.current_book.title}
-                  </Text>
-                  <Text className="text-base text-gray-600 mb-2">
-                    {club.current_book.author}
-                  </Text>
-                  {club.current_book.page_count && (
-                    <Text className="text-sm text-gray-400 mb-2">
-                      {club.current_book.page_count} pages
-                    </Text>
-                  )}
-                  {club.current_book.synopsis && (
-                    <Text className="text-sm text-gray-600 leading-5" numberOfLines={3}>
-                      {club.current_book.synopsis}
-                    </Text>
-                  )}
-                </View>
-              </View>
-
-              {isMember && (
-                <View className="flex flex-row gap-3">
-                  <TouchableOpacity
-                    className="flex-1 flex-row items-center justify-center gap-2 bg-amber-600 rounded-lg py-3"
-                    onPress={() => setShowNotesModal(true)}
-                  >
-                    <MessageSquare size={16} color="rgb(255, 255, 255)" />{/* white */}
-                    <Text className="text-white text-sm font-semibold">
-                      My Notes & Questions
-                    </Text>
-                  </TouchableOpacity>
-
-                  {isAdmin && (
-                    <TouchableOpacity
-                      className={`flex-1 flex-row items-center justify-center gap-2 rounded-lg py-3 ${
-                        notesRevealed ? 'bg-emerald-500' : 'bg-primary'
-                      }`}
-                      onPress={revealNotes}
-                      disabled={notesRevealed}
-                    >
-                      {notesRevealed ? (
-                        <>
-                          <Eye size={16} color="rgb(16, 185, 129)" />{/* emerald-500 */}
-                          <Text className="text-white text-sm font-semibold">
-                            Notes Revealed
-                          </Text>
-                        </>
-                      ) : (
-                        <>
-                          <EyeOff size={16} color="rgb(255, 255, 255)" />{/* white */}
-                          <Text className="text-white text-sm font-semibold">
-                            Reveal Notes
-                          </Text>
-                        </>
-                      )}
-                    </TouchableOpacity>
-                  )}
-                </View>
-              )}
-            </View>
-          ) : (
-            <View className="bg-white rounded-xl p-8 items-center shadow-md">
-              <BookOpen size={48} color="rgb(156, 163, 175)" />{/* gray-400 */}
-              <Text className="text-base text-gray-600 mt-3 mb-4">No current book selected</Text>
-              {isAdmin && (
-                <TouchableOpacity
-                  className="bg-blue-500 rounded-lg px-4 py-3"
-                  onPress={() => setShowBookModal(true)}
-                >
-                  <Text className="text-white text-sm font-semibold">Select Book</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          )}
-        </View>
-
         {/* Meetings Section */}
         <View className="mb-6">
           <View className="flex flex-row justify-between items-center mb-4">
@@ -627,16 +524,6 @@ export default function ClubDetailScreen() {
           <Members initialClub={club} bookClubId={bookClubId} isAdmin={isAdmin} />
         )}
       </ScrollView>
-
-      {/* Book Selection Modal */}
-      
-      
-      <BookSelectionModal
-        isVisible={showBookModal}
-        onClose={() => setShowBookModal(false)}
-        bookClubId={bookClubId}
-        onBookSelected={loadClubDetails}
-      />
 
       {/* Meeting Creation Modal */}
       <Modal
@@ -707,61 +594,6 @@ export default function ClubDetailScreen() {
         </SafeAreaView>
       </Modal>
 
-      {/* Notes Modal */}
-      <Modal
-        visible={showNotesModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
-      >
-        <SafeAreaView className="flex-1 bg-white">
-          <View className="flex-row justify-between items-center p-5 border-b border-gray-200">
-            <TouchableOpacity onPress={() => setShowNotesModal(false)}>
-              <Text className="text-base text-gray-600">Cancel</Text>
-            </TouchableOpacity>
-            <Text className="text-lg font-semibold text-gray-800">My Notes & Questions</Text>
-            <TouchableOpacity onPress={saveNotes}>
-              <Text className="text-base text-blue-500 font-semibold">Save</Text>
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView className="flex-1 p-5">
-            <View className="mb-6">
-              <Text className="text-base font-semibold text-gray-800 mb-2">Notes</Text>
-              <TextInput
-                className="border border-gray-300 rounded-xl p-4 text-base bg-gray-50 h-30 align-text-top"
-                placeholder="Your thoughts, observations, favorite quotes..."
-                value={notesForm.notes}
-                onChangeText={(text) =>
-                  setNotesForm({ ...notesForm, notes: text })
-                }
-                multiline
-                numberOfLines={6}
-              />
-            </View>
-
-            <View className="mb-6">
-              <Text className="text-base font-semibold text-gray-800 mb-2">Discussion Questions</Text>
-              <TextInput
-                className="border border-gray-300 rounded-xl p-4 text-base bg-gray-50 h-30 align-text-top"
-                placeholder="Questions you'd like to discuss with the group..."
-                value={notesForm.questions}
-                onChangeText={(text) =>
-                  setNotesForm({ ...notesForm, questions: text })
-                }
-                multiline
-                numberOfLines={4}
-              />
-            </View>
-
-            <View className="bg-blue-50 rounded-lg p-4 mt-4">
-              <Text className="text-sm text-blue-800 text-center">
-                🔒 Your notes and questions are private until the admin reveals
-                them for group discussion.
-              </Text>
-            </View>
-          </ScrollView>
-        </SafeAreaView>
-      </Modal>
     </SafeAreaView>
   );
 }

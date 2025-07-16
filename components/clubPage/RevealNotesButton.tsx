@@ -160,6 +160,7 @@ export default function RevealNotesButton({
                   className={`flex-1 flex-row items-center justify-center gap-2 rounded-lg py-3 ${
                     notesRevealed ? 'bg-emerald-500' : 'bg-primary'
                   }`}
+                  
                   disabled={notesRevealed}
                 >
                   {notesRevealed ? (
@@ -210,14 +211,6 @@ export default function RevealNotesButton({
           )}
         </div>
       )}
-      <div hidden={!showNotesModal}> Show </div>
-      <button onClick={() => setShowNotesModal(false)}>
-        Hide Notes
-      </button>
-      <button onClick={() => setShowNotesModal(true)}>
-        show Notes
-      </button>
-
       <NotesModal 
       hideNotesModal={() => setShowNotesModal(false)}
       initialClubDetails={club}
