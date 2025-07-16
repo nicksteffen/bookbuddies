@@ -149,7 +149,7 @@ export default function RevealNotesButton({
             <MessageSquare size={16} color="rgb(255, 255, 255)" />
             {/* white */}
             <span
-              className="text-lg font-semibold text-gray-100">
+              className="text-white text-sm font-semibold">
                 My Notes & Questions
             </span>
           </Button>
