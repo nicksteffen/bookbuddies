@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   TouchableOpacity,
   TextInput,
@@ -12,10 +11,21 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Plus, Search, Star, BookOpen, Heart, Clock } from 'lucide-react-native';
+import { Plus, Search, Star, BookOpen, Heart } from 'lucide-react-native';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { searchBooks } from '../../lib/api';
+
+// Helper for Lucide Icon Colors:
+// These need to be actual color strings (hex, rgb, etc.) as the 'color' prop
+// on Lucide icons does not interpret Tailwind class names directly.
+// These hex values align with common Tailwind defaults or your custom theme.
+const ICON_COLORS = {
+  primary: '#3B82F6',       // Matches common blue-500, like your 'primary' default
+  emerald: '#10B981',       // Matches your custom 'emerald-500'
+  red: '#EF4444',           // Matches your custom 'red-500'
+  mutedForeground: '#6B7280', // Matches common gray-500, like your 'muted-foreground' default
+};
 
 interface Book {
   id: string;
@@ -108,13 +118,13 @@ export default function LibraryScreen() {
 
   const addBookToList = async (bookData: any, listType: string) => {
     try {
-      // First, create or get the book
       let bookId = null;
       const { data: existingBook } = await supabase
         .from('books')
         .select('id')
         .eq('title', bookData.title)
         .eq('author', bookData.author)
+        .eq('isbn', bookData.isbn)
         .single();
 
       if (existingBook) {
@@ -134,10 +144,13 @@ export default function LibraryScreen() {
           .single();
 
         if (bookError) throw bookError;
-        bookId = newBook.id;
+        bookId = newBook?.id;
       }
 
-      // Check if already in any list
+      if (!bookId) {
+        throw new Error("Failed to obtain book ID after creation or lookup.");
+      }
+
       const { data: existingEntry } = await supabase
         .from('user_book_lists')
         .select('id, list_type')
@@ -146,15 +159,21 @@ export default function LibraryScreen() {
         .single();
 
       if (existingEntry) {
-        // Update existing entry
-        const { error } = await supabase
-          .from('user_book_lists')
-          .update({ list_type: listType })
-          .eq('id', existingEntry.id);
-
-        if (error) throw error;
+        if (existingEntry.list_type !== listType) {
+          const { error } = await supabase
+            .from('user_book_lists')
+            .update({ list_type: listType })
+            .eq('id', existingEntry.id);
+          if (error) throw error;
+        } else {
+          Alert.alert('Info', `Book is already in your "${getListTitle(listType)}" list.`);
+          setShowAddModal(false);
+          setSearchQuery('');
+          setSearchResults([]);
+          loadUserBooks();
+          return;
+        }
       } else {
-        // Create new entry
         const { error } = await supabase
           .from('user_book_lists')
           .insert({
@@ -172,7 +191,8 @@ export default function LibraryScreen() {
       loadUserBooks();
       Alert.alert('Success', 'Book added to your library!');
     } catch (error: any) {
-      Alert.alert('Error', error.message);
+      console.error('Error adding book to list:', error);
+      Alert.alert('Error', error.message || 'Failed to add book.');
     }
   };
 
@@ -187,8 +207,10 @@ export default function LibraryScreen() {
       if (error) throw error;
 
       loadUserBooks();
+      Alert.alert('Success', `Book moved to "${getListTitle(toList)}"`);
     } catch (error: any) {
-      Alert.alert('Error', error.message);
+      console.error('Error moving book:', error);
+      Alert.alert('Error', error.message || 'Failed to move book.');
     }
   };
 
@@ -212,8 +234,10 @@ export default function LibraryScreen() {
               if (error) throw error;
 
               loadUserBooks();
+              Alert.alert('Success', 'Book removed from library.');
             } catch (error: any) {
-              Alert.alert('Error', error.message);
+              console.error('Error removing book:', error);
+              Alert.alert('Error', error.message || 'Failed to remove book.');
             }
           },
         },
@@ -224,13 +248,13 @@ export default function LibraryScreen() {
   const getListIcon = (listType: string) => {
     switch (listType) {
       case 'reading_now':
-        return <BookOpen size={20} color="#3B82F6" />;
+        return <BookOpen size={20} color={ICON_COLORS.primary} />;
       case 'read':
-        return <Star size={20} color="#10B981" />;
+        return <Star size={20} color={ICON_COLORS.emerald} />;
       case 'want_to_read':
-        return <Heart size={20} color="#EF4444" />;
+        return <Heart size={20} color={ICON_COLORS.red} />;
       default:
-        return <BookOpen size={20} color="#6B7280" />;
+        return <BookOpen size={20} color={ICON_COLORS.mutedForeground} />;
     }
   };
 
@@ -248,44 +272,52 @@ export default function LibraryScreen() {
   };
 
   const renderBookCard = (book: Book, listType: string) => (
-    <TouchableOpacity key={book.id} style={styles.bookCard}>
-      <View style={styles.bookContent}>
-        {book.cover_url ? (
-          <Image source={{ uri: book.cover_url }} style={styles.bookCover} />
+    <TouchableOpacity key={book.id} className="bg-card rounded-xl p-4 shadow-md">
+      <View className="flex-row gap-3">
+        {/* Using !! for cover_url for consistency, though string checks usually suffice */}
+        {!!book.cover_url ? (
+          <Image source={{ uri: book.cover_url }} className="w-[60px] h-[90px] rounded-md" />
         ) : (
-          <View style={styles.placeholderCover}>
-            <Text style={styles.placeholderText}>📚</Text>
+          <View className="w-[60px] h-[90px] bg-muted rounded-md justify-center items-center">
+            <Text className="text-2xl">📚</Text>
           </View>
         )}
-        <View style={styles.bookInfo}>
-          <Text style={styles.bookTitle} numberOfLines={2}>{book.title}</Text>
-          <Text style={styles.bookAuthor} numberOfLines={1}>{book.author}</Text>
-          {book.page_count && (
-            <Text style={styles.bookPages}>{book.page_count} pages</Text>
+        <View className="flex-1">
+          <Text className="text-foreground text-base font-semibold mb-1" numberOfLines={2}>
+            {book.title}
+          </Text>
+          <Text className="text-muted-foreground text-sm mb-1" numberOfLines={1}>
+            {book.author}
+          </Text>
+          {/* Applied !! to page_count */}
+          {!!book.page_count && (
+            <Text className="text-muted-foreground text-xs mb-3">
+              {book.page_count} pages
+            </Text>
           )}
-          
-          <View style={styles.bookActions}>
+
+          <View className="flex-row gap-2">
             {listType === 'want_to_read' && (
               <TouchableOpacity
-                style={styles.actionButton}
+                className="bg-primary rounded-md px-3 py-1.5 active:opacity-70"
                 onPress={() => moveBook(book.id, listType, 'reading_now')}
               >
-                <Text style={styles.actionButtonText}>Start Reading</Text>
+                <Text className="text-primary-foreground text-xs font-semibold">Start Reading</Text>
               </TouchableOpacity>
             )}
             {listType === 'reading_now' && (
               <TouchableOpacity
-                style={styles.actionButton}
+                className="bg-primary rounded-md px-3 py-1.5 active:opacity-70"
                 onPress={() => moveBook(book.id, listType, 'read')}
               >
-                <Text style={styles.actionButtonText}>Mark as Read</Text>
+                <Text className="text-primary-foreground text-xs font-semibold">Mark as Read</Text>
               </TouchableOpacity>
             )}
             <TouchableOpacity
-              style={styles.removeButton}
+              className="bg-muted rounded-md px-3 py-1.5 active:opacity-70"
               onPress={() => removeBook(book.id)}
             >
-              <Text style={styles.removeButtonText}>Remove</Text>
+              <Text className="text-muted-foreground text-xs font-semibold">Remove</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -295,55 +327,55 @@ export default function LibraryScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#3B82F6" />
-        </View>
+      <SafeAreaView className="flex-1 bg-background justify-center items-center">
+        <ActivityIndicator size="large" color={ICON_COLORS.primary} />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>My Library</Text>
+    <SafeAreaView className="flex-1 bg-background">
+      <View className="flex-row justify-between items-center px-5 py-4 bg-card border-b border-border">
+        <Text className="text-foreground text-2xl font-bold">My Library</Text>
         <TouchableOpacity
-          style={styles.addButton}
+          className="bg-primary rounded-full w-10 h-10 justify-center items-center active:opacity-70"
           onPress={() => setShowAddModal(true)}
         >
-          <Plus size={20} color="#FFFFFF" />
+          <Plus size={20} color="white" />
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {(['reading_now', 'read', 'want_to_read'] as const).map((listType) => (
-          <View key={listType} style={styles.section}>
-            <View style={styles.sectionHeader}>
-              {getListIcon(listType)}
-              <Text style={styles.sectionTitle}>{getListTitle(listType)}</Text>
-              <Text style={styles.bookCount}>({books[listType].length})</Text>
+      <ScrollView>
+        <View className="p-5">
+          {(['reading_now', 'read', 'want_to_read'] as const).map((listType) => (
+            <View key={listType} className="mb-8">
+              <View className="flex-row items-center mb-4 gap-2">
+                {getListIcon(listType)}
+                <Text className="text-foreground text-lg font-semibold">{getListTitle(listType)}</Text>
+                <Text className="text-muted-foreground text-base">({books[listType].length})</Text>
+              </View>
+
+              {books[listType].length === 0 ? (
+                <View className="bg-card rounded-xl p-8 items-center shadow-md">
+                  <Text className="text-muted-foreground text-base mb-4 text-center">No books in this list</Text>
+                  <TouchableOpacity
+                    className="bg-primary rounded-md px-4 py-3 active:opacity-70"
+                    onPress={() => {
+                      setSelectedList(listType);
+                      setShowAddModal(true);
+                    }}
+                  >
+                    <Text className="text-primary-foreground text-sm font-semibold">Add your first book</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <View className="gap-3">
+                  {books[listType].map((book) => renderBookCard(book, listType))}
+                </View>
+              )}
             </View>
-            
-            {books[listType].length === 0 ? (
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyText}>No books in this list</Text>
-                <TouchableOpacity
-                  style={styles.addFirstButton}
-                  onPress={() => {
-                    setSelectedList(listType);
-                    setShowAddModal(true);
-                  }}
-                >
-                  <Text style={styles.addFirstButtonText}>Add your first book</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <View style={styles.booksList}>
-                {books[listType].map((book) => renderBookCard(book, listType))}
-              </View>
-            )}
-          </View>
-        ))}
+          ))}
+        </View>
       </ScrollView>
 
       <Modal
@@ -351,46 +383,46 @@ export default function LibraryScreen() {
         animationType="slide"
         presentationStyle="pageSheet"
       >
-        <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setShowAddModal(false)}>
-              <Text style={styles.cancelText}>Cancel</Text>
+        <SafeAreaView className="flex-1 bg-background">
+          <View className="flex-row justify-between items-center p-5 border-b border-border">
+            <TouchableOpacity onPress={() => setShowAddModal(false)} className="active:opacity-70">
+              <Text className="text-muted-foreground text-base">Cancel</Text>
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>Add Book</Text>
-            <View style={styles.placeholder} />
+            <Text className="text-foreground text-lg font-semibold">Add Book</Text>
+            <View className="w-[60px]" /> {/* Placeholder for consistent spacing */}
           </View>
 
-          <View style={styles.modalContent}>
-            <View style={styles.searchContainer}>
-              <Search size={20} color="#6B7280" />
+          <View className="flex-1 p-5">
+            <View className="flex-row items-center bg-muted/20 rounded-xl px-4 py-3 mb-5 gap-3">
+              <Search size={20} color={ICON_COLORS.mutedForeground} />
               <TextInput
-                style={styles.searchInput}
+                className="flex-1 text-base text-foreground"
                 placeholder="Search for books..."
+                placeholderTextColor={ICON_COLORS.mutedForeground}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 onSubmitEditing={handleSearch}
               />
-              <TouchableOpacity onPress={handleSearch} disabled={searching}>
-                <Text style={styles.searchButton}>
+              <TouchableOpacity onPress={handleSearch} disabled={searching} className="active:opacity-70">
+                <Text className="text-primary font-semibold text-base">
                   {searching ? 'Searching...' : 'Search'}
                 </Text>
               </TouchableOpacity>
             </View>
 
-            <View style={styles.listTypeSelector}>
-              <Text style={styles.listTypeSelectorTitle}>Add to:</Text>
-              <View style={styles.listTypeOptions}>
+            <View className="mb-5">
+              <Text className="text-foreground text-base font-semibold mb-3">Add to:</Text>
+              <View className="flex-row gap-2">
                 {(['want_to_read', 'reading_now', 'read'] as const).map((listType) => (
                   <TouchableOpacity
                     key={listType}
-                    style={[
-                      styles.listTypeOption,
-                      selectedList === listType && styles.listTypeOptionSelected,
-                    ]}
+                    className={`flex-row items-center gap-1.5 bg-muted rounded-lg px-3 py-2 active:opacity-70 ${
+                      selectedList === listType ? 'bg-primary/10 border border-primary' : ''
+                    }`}
                     onPress={() => setSelectedList(listType)}
                   >
                     {getListIcon(listType)}
-                    <Text style={styles.listTypeOptionText}>
+                    <Text className="text-foreground text-sm font-medium">
                       {getListTitle(listType)}
                     </Text>
                   </TouchableOpacity>
@@ -398,28 +430,35 @@ export default function LibraryScreen() {
               </View>
             </View>
 
-            <ScrollView style={styles.searchResults}>
+            <ScrollView className="flex-1">
               {searchResults.map((book, index) => (
                 <TouchableOpacity
                   key={index}
-                  style={styles.searchResultCard}
+                  className="flex-row bg-card rounded-xl p-3 mb-3 gap-3 active:opacity-70"
                   onPress={() => addBookToList(book, selectedList)}
                 >
-                  {book.cover_url ? (
-                    <Image source={{ uri: book.cover_url }} style={styles.resultCover} />
+                  {/* Applied !! to cover_url */}
+                  {!!book.cover_url ? (
+                    <Image source={{ uri: book.cover_url }} className="w-[50px] h-[75px] rounded-md" />
                   ) : (
-                    <View style={styles.resultPlaceholder}>
-                      <Text style={styles.placeholderText}>📚</Text>
+                    <View className="w-[50px] h-[75px] bg-muted rounded-md justify-center items-center">
+                      <Text className="text-2xl">📚</Text>
                     </View>
                   )}
-                  <View style={styles.resultInfo}>
-                    <Text style={styles.resultTitle}>{book.title}</Text>
-                    <Text style={styles.resultAuthor}>{book.author}</Text>
-                    {book.year && (
-                      <Text style={styles.resultYear}>Published: {book.year}</Text>
+                  <View className="flex-1">
+                    <Text className="text-foreground text-base font-semibold mb-1">
+                      {book.title}
+                    </Text>
+                    <Text className="text-muted-foreground text-sm mb-1">
+                      {book.author}
+                    </Text>
+                    {/* Applied !! to year */}
+                    {!!book.year && (
+                      <Text className="text-muted-foreground text-xs mb-0.5">Published: {book.year}</Text>
                     )}
-                    {book.page_count && (
-                      <Text style={styles.resultPages}>{book.page_count} pages</Text>
+                    {/* Applied !! to page_count */}
+                    {!!book.page_count && (
+                      <Text className="text-muted-foreground text-xs">{book.page_count} pages</Text>
                     )}
                   </View>
                 </TouchableOpacity>
@@ -430,291 +469,4 @@ export default function LibraryScreen() {
       </Modal>
     </SafeAreaView>
   );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1F2937',
-  },
-  addButton: {
-    backgroundColor: '#3B82F6',
-    borderRadius: 20,
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  scrollContent: {
-    padding: 20,
-  },
-  section: {
-    marginBottom: 32,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-    gap: 8,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
-  },
-  bookCount: {
-    fontSize: 16,
-    color: '#6B7280',
-  },
-  emptyState: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 32,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#6B7280',
-    marginBottom: 16,
-  },
-  addFirstButton: {
-    backgroundColor: '#3B82F6',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  addFirstButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  booksList: {
-    gap: 12,
-  },
-  bookCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  bookContent: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  bookCover: {
-    width: 60,
-    height: 90,
-    borderRadius: 6,
-  },
-  placeholderCover: {
-    width: 60,
-    height: 90,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 6,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  placeholderText: {
-    fontSize: 24,
-  },
-  bookInfo: {
-    flex: 1,
-  },
-  bookTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 4,
-  },
-  bookAuthor: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginBottom: 4,
-  },
-  bookPages: {
-    fontSize: 12,
-    color: '#9CA3AF',
-    marginBottom: 12,
-  },
-  bookActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  actionButton: {
-    backgroundColor: '#3B82F6',
-    borderRadius: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  actionButtonText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  removeButton: {
-    backgroundColor: '#E5E7EB',
-    borderRadius: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  removeButtonText: {
-    color: '#6B7280',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
-  },
-  cancelText: {
-    fontSize: 16,
-    color: '#6B7280',
-  },
-  placeholder: {
-    width: 60,
-  },
-  modalContent: {
-    flex: 1,
-    padding: 20,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginBottom: 20,
-    gap: 12,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: '#1F2937',
-  },
-  searchButton: {
-    fontSize: 16,
-    color: '#3B82F6',
-    fontWeight: '600',
-  },
-  listTypeSelector: {
-    marginBottom: 20,
-  },
-  listTypeSelectorTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 12,
-  },
-  listTypeOptions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  listTypeOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  listTypeOptionSelected: {
-    backgroundColor: '#EFF6FF',
-    borderWidth: 1,
-    borderColor: '#3B82F6',
-  },
-  listTypeOptionText: {
-    fontSize: 14,
-    color: '#1F2937',
-    fontWeight: '500',
-  },
-  searchResults: {
-    flex: 1,
-  },
-  searchResultCard: {
-    flexDirection: 'row',
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
-    gap: 12,
-  },
-  resultCover: {
-    width: 50,
-    height: 75,
-    borderRadius: 6,
-  },
-  resultPlaceholder: {
-    width: 50,
-    height: 75,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 6,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  resultInfo: {
-    flex: 1,
-  },
-  resultTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 4,
-  },
-  resultAuthor: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginBottom: 4,
-  },
-  resultYear: {
-    fontSize: 12,
-    color: '#9CA3AF',
-    marginBottom: 2,
-  },
-  resultPages: {
-    fontSize: 12,
-    color: '#9CA3AF',
-  },
-});
+} b
