@@ -30,30 +30,9 @@ import { searchBooks } from '@/lib/api';
 import Members from '@/components/clubPage/Members';
 import CurrentBookSection from '@/components/clubPage/CurrentBookSection';
 import BookSelectionModal from '@/components/clubPage/BookSelectionModal';
+import { ClubDetails } from '@/types/club';
 
-interface ClubDetails {
-  id: string;
-  name: string;
-  description: string | null;
-  privacy: 'public' | 'private' | 'secret';
-  admin_user_id: string;
-  current_book_id: string | null;
-  created_at: string;
-  current_book?: {
-    id: string;
-    title: string;
-    author: string;
-    cover_url: string | null;
-    synopsis: string | null;
-    page_count: number | null;
-  } | null;
-  club_books?: {
-    id: string;
-    notes_revealed: boolean;
-    average_rating: number | null;
-    book_id: string;
-  }[];
-}
+
 
 interface Member {
   id: string;
@@ -132,9 +111,7 @@ export default function ClubDetailScreen() {
   const loadClubDetails = async () => {
     console.log("parent load clubn detials")
     try {
-      const { data: testData, error: testError } = await supabase
-        .from('book_clubs')
-        .select('*');
+
 
       const { data: currentClub, error: currentClubError } = await supabase
         .from('book_clubs')
@@ -241,19 +218,7 @@ export default function ClubDetailScreen() {
     }
   };
 
-  const searchForBooks = async () => {
-    if (!bookSearch.trim()) return;
 
-    setSearching(true);
-    try {
-      const results = await searchBooks(bookSearch);
-      setBookResults(results);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to search books');
-    } finally {
-      setSearching(false);
-    }
-  };
 
   const setCurrentBook = async (bookData: any) => {
     try {
@@ -291,24 +256,28 @@ export default function ClubDetailScreen() {
         .from('book_clubs')
         .update({ current_book_id: bookId })
         .eq('id', bookClubId);
+      // todo should set previous book not current
 
       if (clubError) throw clubError;
 
       // Create club_books entry
-      const { error: clubBookError } = await supabase
+      const { error : clubBookError} = await supabase
         .from('club_books')
-        .insert({
+        .upsert({
           club_id: bookClubId,
           book_id: bookId,
           status: 'current',
           notes_revealed: false,
+        }, { 
+          onConflict: 'club_id,book_id',  // Specify the unique constraint columns
+          ignoreDuplicates: false  // This ensures the row is updated if it exists
         });
 
       if (clubBookError) throw clubBookError;
 
-      setShowBookModal(false);
-      setBookSearch('');
-      setBookResults([]);
+      // setShowBookModal(false);
+      // setBookSearch('');
+      // setBookResults([]);
       loadClubDetails();
       Alert.alert('Success', 'Current book updated!');
     } catch (error: any) {
@@ -348,84 +317,82 @@ export default function ClubDetailScreen() {
     }
   };
 
-  const saveNotes = async () => {
-    if (!club?.current_book_id) return;
+  // const saveNotes = async () => {
+  //   if (!club?.current_book_id) return;
 
-    try {
-      const { data: clubBookData } = await supabase
-        .from('club_books')
-        .select('id')
-        .eq('club_id', bookClubId)
-        .eq('book_id', club.current_book_id)
-        .single();
+  //   try {
+  //     const { data: clubBookData } = await supabase
+  //       .from('club_books')
+  //       .select('id')
+  //       .eq('club_id', bookClubId)
+  //       .eq('book_id', club.current_book_id)
+  //       .single();
 
-      if (!clubBookData) return;
+  //     if (!clubBookData) return;
 
-      if (userNotes) {
-        // Update existing notes
-        const { error } = await supabase
-          .from('user_book_notes')
-          .update({
-            notes: notesForm.notes,
-            questions: notesForm.questions || null,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', userNotes.id);
+  //     if (userNotes) {
+  //       // Update existing notes
+  //       const { error } = await supabase
+  //         .from('user_book_notes')
+  //         .update({
+  //           notes: notesForm.notes,
+  //           questions: notesForm.questions || null,
+  //           updated_at: new Date().toISOString(),
+  //         })
+  //         .eq('id', userNotes.id);
 
-        if (error) throw error;
-      } else {
-        // Create new notes
-        const { error } = await supabase.from('user_book_notes').insert({
-          user_id: user?.id!,
-          club_book_id: clubBookData.id,
-          notes: notesForm.notes,
-          questions: notesForm.questions || null,
-        });
+  //       if (error) throw error;
+  //     } else {
+  //       // Create new notes
+  //       const { error } = await supabase.from('user_book_notes').insert({
+  //         user_id: user?.id!,
+  //         club_book_id: clubBookData.id,
+  //         notes: notesForm.notes,
+  //         questions: notesForm.questions || null,
+  //       });
 
-        if (error) throw error;
-      }
+  //       if (error) throw error;
+  //     }
 
-      setShowNotesModal(false);
-      loadUserNotes();
-      Alert.alert('Success', 'Notes saved!');
-    } catch (error: any) {
-      Alert.alert('Error', error.message);
-    }
-  };
+  //     setShowNotesModal(false);
+  //     loadUserNotes();
+  //     Alert.alert('Success', 'Notes saved!');
+  //   } catch (error: any) {
+  //     Alert.alert('Error', error.message);
+  //   }
+  // };
 
-  const revealNotes = async () => {
-    if (!club?.current_book_id) return;
+  // const revealNotes = async () => {
+  //   if (!club?.current_book_id) return;
 
-    Alert.alert(
-      'Reveal Notes & Questions',
-      'This will make all member notes and questions visible to everyone in the club. This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Reveal',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const { error } = await supabase
-                .from('club_books')
-                .update({ notes_revealed: true })
-                .eq('club_id', bookClubId)
-                .eq('book_id', club.current_book_id);
+  //   Alert.alert(
+  //     'Reveal Notes & Questions',
+  //     'This will make all member notes and questions visible to everyone in the club. This action cannot be undone.',
+  //     [
+  //       { text: 'Cancel', style: 'cancel' },
+  //       {
+  //         text: 'Reveal',
+  //         style: 'destructive',
+  //         onPress: async () => {
+  //           try {
+  //             const { error } = await supabase
+  //               .from('club_books')
+  //               .update({ notes_revealed: true })
+  //               .eq('club_id', bookClubId)
+  //               .eq('book_id', club.current_book_id);
 
-              if (error) throw error;
+  //             if (error) throw error;
 
-              loadClubDetails();
-              Alert.alert('Success', 'Notes and questions revealed!');
-            } catch (error: any) {
-              Alert.alert('Error', error.message);
-            }
-          },
-        },
-      ],
-    );
-  };
-
-  
+  //             loadClubDetails();
+  //             Alert.alert('Success', 'Notes and questions revealed!');
+  //           } catch (error: any) {
+  //             Alert.alert('Error', error.message);
+  //           }
+  //         },
+  //       },
+  //     ],
+  //   );
+  // };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -458,7 +425,7 @@ export default function ClubDetailScreen() {
     );
   }
 
-  const notesRevealed = club.club_books?.[0]?.notes_revealed || false;
+  // const notesRevealed = club.club_books?.[0]?.notes_revealed || false;
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
@@ -477,7 +444,7 @@ export default function ClubDetailScreen() {
           )}
         </View>
 
-        <CurrentBookSection loadClubDetails={loadClubDetails} initialClub={club} isAdmin={isAdmin} isMember={isMember} bookClubId={club.id} />
+        <CurrentBookSection showBookModal={() => setShowBookModal(true)} loadClubDetails={loadClubDetails} club={club} isAdmin={isAdmin} isMember={isMember} bookClubId={club.id} />
 
         {/* Meetings Section */}
         <View className="mb-6">
@@ -594,6 +561,14 @@ export default function ClubDetailScreen() {
         </SafeAreaView>
       </Modal>
 
+
+      <BookSelectionModal
+        isVisible={showBookModal}
+        onClose={() => setShowBookModal(false)}
+        onBookSelected={setCurrentBook}
+        modalTitle='Select Current Book'
+      />
+      
     </SafeAreaView>
   );
 }

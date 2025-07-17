@@ -4,17 +4,20 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  TextInput,
-  Modal,
-  Image,
   Alert,
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Plus, Search, Star, BookOpen, Heart } from 'lucide-react-native';
+import { Plus, Star, BookOpen, Heart } from 'lucide-react-native';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { searchBooks } from '../../lib/api';
+import BookCard from '@/components/BookCard';
+import BookSelectionModal from '@/components/clubPage/BookSelectionModal';
+import { Book as BookData } from '@/types/book'
+import ReadingListDisplay from '@/components/ReadingListDisplay';
+
+type listType = 'reading_now' | 'read' | 'want_to_read';
 
 // Helper for Lucide Icon Colors:
 // These need to be actual color strings (hex, rgb, etc.) as the 'color' prop
@@ -27,6 +30,7 @@ const ICON_COLORS = {
   mutedForeground: '#6B7280', // Matches common gray-500, like your 'muted-foreground' default
 };
 
+// todo look into this Book type and see what the list_type use is
 interface Book {
   id: string;
   title: string;
@@ -49,11 +53,9 @@ export default function LibraryScreen() {
     want_to_read: [],
   });
   const [loading, setLoading] = useState(true);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [searching, setSearching] = useState(false);
+
   const [selectedList, setSelectedList] = useState<'reading_now' | 'read' | 'want_to_read'>('want_to_read');
+  const [showBookModal, setShowBookModal] = useState(false);
 
   useEffect(() => {
     loadUserBooks();
@@ -101,22 +103,12 @@ export default function LibraryScreen() {
     }
   };
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
 
-    setSearching(true);
-    try {
-      const results = await searchBooks(searchQuery);
-      setSearchResults(results);
-    } catch (error) {
-      console.error('Error searching books:', error);
-      Alert.alert('Error', 'Failed to search books');
-    } finally {
-      setSearching(false);
-    }
-  };
+  // const addBookToList = async (bookData: any, listType: string) => {
+  // TODO: refactor to use the upsert and eventually get_or_create_book
+  const addBookToList = async (bookData: BookData, listType?: listType) => {
+    if (!listType) return;
 
-  const addBookToList = async (bookData: any, listType: string) => {
     try {
       let bookId = null;
       const { data: existingBook } = await supabase
@@ -167,9 +159,9 @@ export default function LibraryScreen() {
           if (error) throw error;
         } else {
           Alert.alert('Info', `Book is already in your "${getListTitle(listType)}" list.`);
-          setShowAddModal(false);
-          setSearchQuery('');
-          setSearchResults([]);
+          // setShowAddModal(false);
+          // setSearchQuery('');
+          // setSearchResults([]);
           loadUserBooks();
           return;
         }
@@ -185,9 +177,11 @@ export default function LibraryScreen() {
         if (error) throw error;
       }
 
-      setShowAddModal(false);
-      setSearchQuery('');
-      setSearchResults([]);
+      // setShowAddModal(false);
+      // setShowBookModal(false);
+      // 
+      // setSearchQuery('');
+      // setSearchResults([]);
       loadUserBooks();
       Alert.alert('Success', 'Book added to your library!');
     } catch (error: any) {
@@ -271,59 +265,96 @@ export default function LibraryScreen() {
     }
   };
 
-  const renderBookCard = (book: Book, listType: string) => (
-    <TouchableOpacity key={book.id} className="bg-card rounded-xl p-4 shadow-md">
-      <View className="flex-row gap-3">
-        {/* Using !! for cover_url for consistency, though string checks usually suffice */}
-        {!!book.cover_url ? (
-          <Image source={{ uri: book.cover_url }} className="w-[60px] h-[90px] rounded-md" />
-        ) : (
-          <View className="w-[60px] h-[90px] bg-muted rounded-md justify-center items-center">
-            <Text className="text-2xl">📚</Text>
-          </View>
-        )}
-        <View className="flex-1">
-          <Text className="text-foreground text-base font-semibold mb-1" numberOfLines={2}>
-            {book.title}
-          </Text>
-          <Text className="text-muted-foreground text-sm mb-1" numberOfLines={1}>
-            {book.author}
-          </Text>
-          {/* Applied !! to page_count */}
-          {!!book.page_count && (
-            <Text className="text-muted-foreground text-xs mb-3">
-              {book.page_count} pages
-            </Text>
-          )}
+  // todo, this is still here as a reference because it had different styles that the BookCard Component did
+  // const renderBookCard1 = (book: Book, listType: string) => (
+  //   <TouchableOpacity key={book.id} className="bg-card rounded-xl p-4 shadow-md">
+  //     <View className="flex-row gap-3">
+  //       {/* Using !! for cover_url for consistency, though string checks usually suffice */}
+  //       {!!book.cover_url ? (
+  //         <Image source={{ uri: book.cover_url }} className="w-[60px] h-[90px] rounded-md" />
+  //       ) : (
+  //         <View className="w-[60px] h-[90px] bg-muted rounded-md justify-center items-center">
+  //           <Text className="text-2xl">📚</Text>
+  //         </View>
+  //       )}
+  //       <View className="flex-1">
+  //         <Text className="text-foreground text-base font-semibold mb-1" numberOfLines={2}>
+  //           {book.title}
+  //         </Text>
+  //         <Text className="text-muted-foreground text-sm mb-1" numberOfLines={1}>
+  //           {book.author}
+  //         </Text>
+  //         {/* Applied !! to page_count */}
+  //         {!!book.page_count && (
+  //           <Text className="text-muted-foreground text-xs mb-3">
+  //             {book.page_count} pages
+  //           </Text>
+  //         )}
 
-          <View className="flex-row gap-2">
-            {listType === 'want_to_read' && (
-              <TouchableOpacity
-                className="bg-primary rounded-md px-3 py-1.5 active:opacity-70"
-                onPress={() => moveBook(book.id, listType, 'reading_now')}
-              >
-                <Text className="text-primary-foreground text-xs font-semibold">Start Reading</Text>
-              </TouchableOpacity>
-            )}
-            {listType === 'reading_now' && (
-              <TouchableOpacity
-                className="bg-primary rounded-md px-3 py-1.5 active:opacity-70"
-                onPress={() => moveBook(book.id, listType, 'read')}
-              >
-                <Text className="text-primary-foreground text-xs font-semibold">Mark as Read</Text>
-              </TouchableOpacity>
-            )}
-            <TouchableOpacity
-              className="bg-muted rounded-md px-3 py-1.5 active:opacity-70"
-              onPress={() => removeBook(book.id)}
-            >
-              <Text className="text-muted-foreground text-xs font-semibold">Remove</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
+  //         <View className="flex-row gap-2">
+  //           {listType === 'want_to_read' && (
+  //             <TouchableOpacity
+  //               className="bg-primary rounded-md px-3 py-1.5 active:opacity-70"
+  //               onPress={() => moveBook(book.id, listType, 'reading_now')}
+  //             >
+  //               <Text className="text-primary-foreground text-xs font-semibold">Start Reading</Text>
+  //             </TouchableOpacity>
+  //           )}
+  //           {listType === 'reading_now' && (
+  //             <TouchableOpacity
+  //               className="bg-primary rounded-md px-3 py-1.5 active:opacity-70"
+  //               onPress={() => moveBook(book.id, listType, 'read')}
+  //             >
+  //               <Text className="text-primary-foreground text-xs font-semibold">Mark as Read</Text>
+  //             </TouchableOpacity>
+  //           )}
+  //           <TouchableOpacity
+  //             className="bg-muted rounded-md px-3 py-1.5 active:opacity-70"
+  //             onPress={() => removeBook(book.id)}
+  //           >
+  //             <Text className="text-muted-foreground text-xs font-semibold">Remove</Text>
+  //           </TouchableOpacity>
+  //         </View>
+  //       </View>
+  //     </View>
+  //   </TouchableOpacity>
+  // );
+  
+
+  
+  const bookButtons = (book: Book, listType:string) => (
+    <View className="flex-row gap-2">
+      {listType === 'want_to_read' && (
+        <TouchableOpacity
+          className="bg-primary rounded-md px-3 py-1.5 active:opacity-70"
+          onPress={() => moveBook(book.id, listType, 'reading_now')}
+        >
+          <Text className="text-primary-foreground text-xs font-semibold">Start Reading</Text>
+        </TouchableOpacity>
+      )}
+      {listType === 'reading_now' && (
+        <TouchableOpacity
+          className="bg-primary rounded-md px-3 py-1.5 active:opacity-70"
+          onPress={() => moveBook(book.id, listType, 'read')}
+        >
+          <Text className="text-primary-foreground text-xs font-semibold">Mark as Read</Text>
+        </TouchableOpacity>
+      )}
+      <TouchableOpacity
+        className="bg-muted rounded-md px-3 py-1.5 active:opacity-70"
+        onPress={() => removeBook(book.id)}
+      >
+        <Text className="text-muted-foreground text-xs font-semibold">Remove</Text>
+      </TouchableOpacity>
+    </View>
+  )
+  
+  const renderBookCard = (book: Book, listType:string) => (
+    <View key={book.id}>
+      <BookCard book={book} />
+      { bookButtons(book, listType) }
+    </View>
+  )
 
   if (loading) {
     return (
@@ -339,7 +370,7 @@ export default function LibraryScreen() {
         <Text className="text-foreground text-2xl font-bold">My Library</Text>
         <TouchableOpacity
           className="bg-primary rounded-full w-10 h-10 justify-center items-center active:opacity-70"
-          onPress={() => setShowAddModal(true)}
+          onPress={() => setShowBookModal(true)}
         >
           <Plus size={20} color="white" />
         </TouchableOpacity>
@@ -350,8 +381,7 @@ export default function LibraryScreen() {
           {(['reading_now', 'read', 'want_to_read'] as const).map((listType) => (
             <View key={listType} className="mb-8">
               <View className="flex-row items-center mb-4 gap-2">
-                {getListIcon(listType)}
-                <Text className="text-foreground text-lg font-semibold">{getListTitle(listType)}</Text>
+                <ReadingListDisplay listType={listType} size="large"/>
                 <Text className="text-muted-foreground text-base">({books[listType].length})</Text>
               </View>
 
@@ -362,7 +392,7 @@ export default function LibraryScreen() {
                     className="bg-primary rounded-md px-4 py-3 active:opacity-70"
                     onPress={() => {
                       setSelectedList(listType);
-                      setShowAddModal(true);
+                      setShowBookModal(true);
                     }}
                   >
                     <Text className="text-primary-foreground text-sm font-semibold">Add your first book</Text>
@@ -378,95 +408,14 @@ export default function LibraryScreen() {
         </View>
       </ScrollView>
 
-      <Modal
-        visible={showAddModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
-      >
-        <SafeAreaView className="flex-1 bg-background">
-          <View className="flex-row justify-between items-center p-5 border-b border-border">
-            <TouchableOpacity onPress={() => setShowAddModal(false)} className="active:opacity-70">
-              <Text className="text-muted-foreground text-base">Cancel</Text>
-            </TouchableOpacity>
-            <Text className="text-foreground text-lg font-semibold">Add Book</Text>
-            <View className="w-[60px]" /> {/* Placeholder for consistent spacing */}
-          </View>
-
-          <View className="flex-1 p-5">
-            <View className="flex-row items-center bg-muted/20 rounded-xl px-4 py-3 mb-5 gap-3">
-              <Search size={20} color={ICON_COLORS.mutedForeground} />
-              <TextInput
-                className="flex-1 text-base text-foreground"
-                placeholder="Search for books..."
-                placeholderTextColor={ICON_COLORS.mutedForeground}
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                onSubmitEditing={handleSearch}
-              />
-              <TouchableOpacity onPress={handleSearch} disabled={searching} className="active:opacity-70">
-                <Text className="text-primary font-semibold text-base">
-                  {searching ? 'Searching...' : 'Search'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <View className="mb-5">
-              <Text className="text-foreground text-base font-semibold mb-3">Add to:</Text>
-              <View className="flex-row gap-2">
-                {(['want_to_read', 'reading_now', 'read'] as const).map((listType) => (
-                  <TouchableOpacity
-                    key={listType}
-                    className={`flex-row items-center gap-1.5 bg-muted rounded-lg px-3 py-2 active:opacity-70 ${
-                      selectedList === listType ? 'bg-primary/10 border border-primary' : ''
-                    }`}
-                    onPress={() => setSelectedList(listType)}
-                  >
-                    {getListIcon(listType)}
-                    <Text className="text-foreground text-sm font-medium">
-                      {getListTitle(listType)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            <ScrollView className="flex-1">
-              {searchResults.map((book, index) => (
-                <TouchableOpacity
-                  key={index}
-                  className="flex-row bg-card rounded-xl p-3 mb-3 gap-3 active:opacity-70"
-                  onPress={() => addBookToList(book, selectedList)}
-                >
-                  {/* Applied !! to cover_url */}
-                  {!!book.cover_url ? (
-                    <Image source={{ uri: book.cover_url }} className="w-[50px] h-[75px] rounded-md" />
-                  ) : (
-                    <View className="w-[50px] h-[75px] bg-muted rounded-md justify-center items-center">
-                      <Text className="text-2xl">📚</Text>
-                    </View>
-                  )}
-                  <View className="flex-1">
-                    <Text className="text-foreground text-base font-semibold mb-1">
-                      {book.title}
-                    </Text>
-                    <Text className="text-muted-foreground text-sm mb-1">
-                      {book.author}
-                    </Text>
-                    {/* Applied !! to year */}
-                    {!!book.year && (
-                      <Text className="text-muted-foreground text-xs mb-0.5">Published: {book.year}</Text>
-                    )}
-                    {/* Applied !! to page_count */}
-                    {!!book.page_count && (
-                      <Text className="text-muted-foreground text-xs">{book.page_count} pages</Text>
-                    )}
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        </SafeAreaView>
-      </Modal>
+      <BookSelectionModal
+        isVisible={showBookModal}
+        onClose={() => setShowBookModal(false)}
+        onBookSelected={addBookToList}
+        initialListType='want_to_read'
+        modalTitle='Add Book'
+        />
+      
     </SafeAreaView>
   );
-} b
+} 

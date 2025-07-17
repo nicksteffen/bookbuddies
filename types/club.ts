@@ -1,3 +1,5 @@
+import { Book } from "./book";
+
 export interface Member {
   id: string;
   user_id: string;
@@ -44,14 +46,15 @@ export interface ClubDetails {
   admin_user_id: string;
   current_book_id: string | null;
   created_at: string;
-  current_book?: {
-    id: string;
-    title: string;
-    author: string;
-    cover_url: string | null;
-    synopsis: string | null;
-    page_count: number | null;
-  } | null;
+  // current_book?: {
+  //   id: string;
+  //   title: string;
+  //   author: string;
+  //   cover_url: string | null;
+  //   synopsis: string | null;
+  //   page_count: number | null;
+  // } | null;
+    current_book? : Book | null;
   club_books?: {
     id: string;
     notes_revealed: boolean;

@@ -1,20 +1,70 @@
 import { searchBooks } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
+import { Book } from "@/types/book";
+import { BookOpen, Heart, Star } from "lucide-react-native";
+import { list } from "postcss";
 import { useState } from "react";
 import { Image, Modal, SafeAreaView, View, TouchableOpacity, TextInput, ScrollView, Text, Alert } from "react-native";
+import ReadingListDisplay from "../ReadingListDisplay";
 
+
+
+// need to figure out exactly why we need this
+// These hex values align with common Tailwind defaults or your custom theme.
+const ICON_COLORS = {
+  primary: '#3B82F6',       // Matches common blue-500, like your 'primary' default
+  emerald: '#10B981',       // Matches your custom 'emerald-500'
+  red: '#EF4444',           // Matches your custom 'red-500'
+  mutedForeground: '#6B7280', // Matches common gray-500, like your 'muted-foreground' default
+};
+// interface listTypes :  'reading_now' | 'read' | 'want_to_read'
+
+// todo how to define listTypes as a type
+type listType = 'reading_now' | 'read' | 'want_to_read';
 
 interface BookSelectionModalProps {
   isVisible: boolean;
   onClose: () => void;
-  bookClubId: string;
-  onBookSelected: () => void;
+  onBookSelected: (bookData: Book, listType? : listType) => void;
+  initialListType?: listType;
+  modalTitle?: string;
+  // 'reading_now' | 'read' | 'want_to_read'
 }
 
-export default function BookSelectionModal({ isVisible, onClose, bookClubId, onBookSelected }: BookSelectionModalProps) {
+
+export default function BookSelectionModal({ isVisible, onClose,  onBookSelected, initialListType , modalTitle}: BookSelectionModalProps) {
   const [bookSearch, setBookSearch] = useState('');
   const [bookResults, setBookResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
+  const [selectedList, setSelectedList] = useState<listType | null>(initialListType || null);
+  console.log(selectedList)
+  
+  
+  const getListTitle = (listType: string) => {
+    switch (listType) {
+      case 'reading_now':
+        return 'Currently Reading';
+      case 'read':
+        return 'Read Books';
+      case 'want_to_read':
+        return 'Want to Read';
+      default:
+        return 'Books';
+    }
+  };
+  
+  const getListIcon = (listType: string) => {
+    switch (listType) {
+      case 'reading_now':
+        return <BookOpen size={20} color={ICON_COLORS.primary} />;
+      case 'read':
+        return <Star size={20} color={ICON_COLORS.emerald} />;
+      case 'want_to_read':
+        return <Heart size={20} color={ICON_COLORS.red} />;
+      default:
+        return <BookOpen size={20} color={ICON_COLORS.mutedForeground} />;
+    }
+  };
   
   
   const searchForBooks = async () => {
@@ -30,33 +80,26 @@ export default function BookSelectionModal({ isVisible, onClose, bookClubId, onB
       setSearching(false);
     }
   };
+  
+  
+  const setCurrentBook = async (bookData : Book) => {
+    console.log(bookData)
+    // bookdata => 
+    // selectedList
+    onClose()
+    
+    setBookResults([])
+    setBookSearch('')
+    if (!!selectedList) {
+      onBookSelected(bookData, selectedList)
+    }
+    onBookSelected(bookData)
+    
+    
+  }
 
-  const setCurrentBook = async (bookData: any) => {
+  const setCurrentBook1 = async (bookData: any) => {
     try {
-      // const { data: book, error: bookError } = await supabase
-      //   .from('books')
-      //   .upsert({
-      //     title: bookData.title,
-      //     author: bookData.author,
-      //     isbn: bookData.isbn,
-      //     cover_url: bookData.cover_url,
-      //     synopsis: bookData.synopsis,
-      //     page_count: bookData.page_count,
-      //   }, {
-      //     onConflict: 'title,author,isbn',  // Unique constraint columns
-      //     ignoreDuplicates: true,
-      //     // count: 'exact'
-      //   })
-      //   .select('id')
-      //   // .single();
-      // console.log('check book error')
-      // console.log(bookError)
-      // console.log('data')
-      // console.log(book)
-      // if (bookError) throw bookError;
-      
-      // const bookId = book[0].id;
-      // ---------------------
       let bookId = null;
       const { data: existingBook } = await supabase
         .from('books')
@@ -138,9 +181,31 @@ export default function BookSelectionModal({ isVisible, onClose, bookClubId, onB
           <TouchableOpacity onPress={() => onClose()}>
             <Text className="text-base text-gray-600">Cancel</Text>
           </TouchableOpacity>
-          <Text className="text-lg font-semibold text-gray-800">Select Current Book</Text>
+          <Text className="text-lg font-semibold text-gray-800">{modalTitle || ""}</Text>
           <View className="w-15" />
         </View>
+        {/* List type selector  */}
+        {!!initialListType && (
+          
+          <View className="mb-5">
+            <Text className="text-foreground text-base font-semibold mb-3">Add to:</Text>
+            <View className="flex-row gap-2">
+              {(['want_to_read', 'reading_now', 'read'] as const).map((listType) => (
+                <TouchableOpacity
+                  key={listType}
+                  className={`flex-row items-center gap-1.5 bg-muted rounded-lg px-3 py-2 active:opacity-70 ${selectedList === listType ? 'bg-primary/10 border border-primary' : ''
+                    }`}
+                  onPress={() => setSelectedList(listType)}
+                >
+                  {/* todo, should we combine these get functions? */}
+                  <ReadingListDisplay listType={listType} size="small" />
+
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )
+        }
 
         <View className="flex-1 p-5">
           <View className="flex-row items-center bg-gray-50 rounded-xl px-4 py-3 mb-5 gap-3">
