@@ -1,25 +1,9 @@
 import { searchBooks } from "@/lib/api";
-import { supabase } from "@/lib/supabase";
 import { Book } from "@/types/book";
-import { BookOpen, Heart, Star } from "lucide-react-native";
-import { list } from "postcss";
 import { useState } from "react";
 import { Image, Modal, SafeAreaView, View, TouchableOpacity, TextInput, ScrollView, Text, Alert } from "react-native";
 import ReadingListDisplay from "../ReadingListDisplay";
 
-
-
-// need to figure out exactly why we need this
-// These hex values align with common Tailwind defaults or your custom theme.
-const ICON_COLORS = {
-  primary: '#3B82F6',       // Matches common blue-500, like your 'primary' default
-  emerald: '#10B981',       // Matches your custom 'emerald-500'
-  red: '#EF4444',           // Matches your custom 'red-500'
-  mutedForeground: '#6B7280', // Matches common gray-500, like your 'muted-foreground' default
-};
-// interface listTypes :  'reading_now' | 'read' | 'want_to_read'
-
-// todo how to define listTypes as a type
 type listType = 'reading_now' | 'read' | 'want_to_read';
 
 interface BookSelectionModalProps {
@@ -28,7 +12,6 @@ interface BookSelectionModalProps {
   onBookSelected: (bookData: Book, listType? : listType) => void;
   initialListType?: listType;
   modalTitle?: string;
-  // 'reading_now' | 'read' | 'want_to_read'
 }
 
 
@@ -37,35 +20,8 @@ export default function BookSelectionModal({ isVisible, onClose,  onBookSelected
   const [bookResults, setBookResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
   const [selectedList, setSelectedList] = useState<listType | null>(initialListType || null);
-  console.log(selectedList)
   
-  
-  const getListTitle = (listType: string) => {
-    switch (listType) {
-      case 'reading_now':
-        return 'Currently Reading';
-      case 'read':
-        return 'Read Books';
-      case 'want_to_read':
-        return 'Want to Read';
-      default:
-        return 'Books';
-    }
-  };
-  
-  const getListIcon = (listType: string) => {
-    switch (listType) {
-      case 'reading_now':
-        return <BookOpen size={20} color={ICON_COLORS.primary} />;
-      case 'read':
-        return <Star size={20} color={ICON_COLORS.emerald} />;
-      case 'want_to_read':
-        return <Heart size={20} color={ICON_COLORS.red} />;
-      default:
-        return <BookOpen size={20} color={ICON_COLORS.mutedForeground} />;
-    }
-  };
-  
+ 
   
   const searchForBooks = async () => {
     if (!bookSearch.trim()) return;
@@ -84,10 +40,7 @@ export default function BookSelectionModal({ isVisible, onClose,  onBookSelected
   
   const setCurrentBook = async (bookData : Book) => {
     console.log(bookData)
-    // bookdata => 
-    // selectedList
     onClose()
-    
     setBookResults([])
     setBookSearch('')
     if (!!selectedList) {
@@ -95,80 +48,7 @@ export default function BookSelectionModal({ isVisible, onClose,  onBookSelected
     }
     onBookSelected(bookData)
     
-    
   }
-
-  const setCurrentBook1 = async (bookData: any) => {
-    try {
-      let bookId = null;
-      const { data: existingBook } = await supabase
-        .from('books')
-        .select('id')
-        .eq('title', bookData.title)
-        .eq('author', bookData.author)
-        .single();
-
-      if (existingBook) {
-        console.log("existing book")
-        bookId = existingBook.id;
-      } else {
-        const { data: newBook, error: bookError } = await supabase
-          .from('books')
-          .insert({
-            title: bookData.title,
-            author: bookData.author,
-            isbn: bookData.isbn,
-            cover_url: bookData.cover_url,
-            synopsis: bookData.synopsis,
-            page_count: bookData.page_count,
-          })
-          .select('id')
-          .single();
-
-        if (bookError) throw bookError;
-        bookId = newBook.id;
-      }
-
-      // Update club's current book
-      const { error: clubError } = await supabase
-        .from('book_clubs')
-        .update({ current_book_id: bookId })
-        .eq('id', bookClubId);
-
-      console.log("if error")
-      console.log(clubError)
-      if (clubError) throw clubError;
-
-      // // Create club_books entry
-      const { error : clubBookError} = await supabase
-        .from('club_books')
-        .upsert({
-          club_id: bookClubId,
-          book_id: bookId,
-          status: 'current',
-          notes_revealed: false,
-        }, { 
-          onConflict: 'club_id,book_id',  // Specify the unique constraint columns
-          ignoreDuplicates: false  // This ensures the row is updated if it exists
-        });
-
-      console.log("clubbookerror")
-      console.log(clubBookError)
-      if (clubBookError) throw clubBookError;
-
-      // setShowBookModal(false);
-      console.log("call on close")
-      onClose()
-      setBookSearch('');
-      setBookResults([]);
-      // loadClubDetails();
-      onBookSelected()
-      Alert.alert('Success', 'Current book updated!');
-    } catch (error: any) {
-      Alert.alert('Error', error.message);
-    }
-  };
-  
   
   return (
     <Modal
