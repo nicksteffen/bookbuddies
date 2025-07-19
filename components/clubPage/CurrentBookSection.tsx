@@ -16,11 +16,12 @@ interface CurrentBookSectionProps {
   isAdmin: boolean;
   loadClubDetails: () => Promise<void>;
   showBookModal: () => void;
+  isMember: boolean;
 }
 
-export default function CurrentBookSection({ loadClubDetails, club, isAdmin, showBookModal} : CurrentBookSectionProps) {
-  
-  // const [showBookModal, setShowBookModal] = useState(false);
+export default function CurrentBookSection({ loadClubDetails, club, isAdmin, showBookModal, isMember} : CurrentBookSectionProps) {
+  const current_club_book = club?.club_books?.find(
+    book => book.book_id === club.current_book_id);
 
   return (
     <>
@@ -42,10 +43,8 @@ export default function CurrentBookSection({ loadClubDetails, club, isAdmin, sho
           <View className="bg-white rounded-xl p-4 shadow-md">
             <BookCard book={club.current_book} />
         
-            <RevealNotesButton initialClub={club} onUpdate={loadClubDetails} />
-
-
-        </View>
+            <NotesButtons initialClub={club} onUpdate={loadClubDetails} isAdmin={isAdmin} isMember={isMember}  />
+        </View> 
       ) : (
         <View className="bg-white rounded-xl p-8 items-center shadow-md">
           <BookOpen size={48} color="rgb(156, 163, 175)" />{/* gray-400 */}

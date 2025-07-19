@@ -444,7 +444,7 @@ export default function ClubDetailScreen() {
           )}
         </View>
 
-        <CurrentBookSection showBookModal={() => setShowBookModal(true)} loadClubDetails={loadClubDetails} club={club} isAdmin={isAdmin} isMember={isMember} bookClubId={club.id} />
+        <CurrentBookSection showBookModal={() => setShowBookModal(true)} loadClubDetails={loadClubDetails} club={club} isAdmin={isAdmin} isMember={isMember} />
 
         {/* Meetings Section */}
         <View className="mb-6">
