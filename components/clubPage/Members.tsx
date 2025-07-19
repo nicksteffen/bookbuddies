@@ -60,6 +60,8 @@ interface MembersProps {
 
 export default function Members({ initialClub, bookClubId, isAdmin }: MembersProps) {
   
+  // todo, I think members should maybe be handled one level up, unless this is 
+  // the only component that needs the data?
   const [members, setMembers] = useState<Member[]>([]);
   const [clubMembers, setClubMembers] = useState<PublicClubMember[]>([]);
   const user = useAuth();
@@ -79,7 +81,6 @@ export default function Members({ initialClub, bookClubId, isAdmin }: MembersPro
       const { data, error: memberError } = await supabase
         .from('club_members_public_view')
         .select( '*' )
-
         .eq('club_id', bookClubId)
         .order('created_at', { ascending: true });
       console.log("Members page")

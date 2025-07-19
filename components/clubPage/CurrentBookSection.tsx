@@ -1,14 +1,11 @@
 "use client"
-import { supabase } from "@/lib/supabase";
 import { Edit, MessageSquare, Eye, EyeOff, BookOpen } from "lucide-react-native";
-import { useEffect, useState } from "react";
-import { Image, View, TouchableOpacity, Modal, SafeAreaView, ScrollView, TextInput, Text, Platform, PlatformColor } from "react-native";
+import { View, TouchableOpacity,  Text } from "react-native";
 import RevealNotesButton from "./RevealNotesButton";
-import { Button } from "../ui/button";
-import BookSelectionModal from "./BookSelectionModal";
-import BookCard from "../BookCard";
-import { Book } from "@/types/book";
 import { ClubDetails } from "@/types/club";
+import { Link } from 'expo-router'
+import BookCard from "../BookCard";
+import NotesButtons from "./NotesButtons";
 
 
 interface CurrentBookSectionProps {
@@ -52,7 +49,7 @@ export default function CurrentBookSection({ loadClubDetails, club, isAdmin, sho
           {isAdmin && (
             <TouchableOpacity
               className="bg-blue-500 rounded-lg px-4 py-3"
-              onPress={() => setShowBookModal(true)}
+              onPress={showBookModal}
             >
               <Text className="text-white text-sm font-semibold">Select Book</Text>
             </TouchableOpacity>

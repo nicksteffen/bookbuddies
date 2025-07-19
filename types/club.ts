@@ -59,5 +59,6 @@ export interface ClubDetails {
     id: string;
     notes_revealed: boolean;
     average_rating: number | null;
+    book_id: string;
   }[];
 }

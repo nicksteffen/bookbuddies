@@ -82,9 +82,9 @@ export default function ClubDetailScreen() {
   const [showNotesModal, setShowNotesModal] = useState(false);
 
   // Form states
-  const [bookSearch, setBookSearch] = useState('');
-  const [bookResults, setBookResults] = useState<any[]>([]);
-  const [searching, setSearching] = useState(false);
+  // const [bookSearch, setBookSearch] = useState('');
+  // const [bookResults, setBookResults] = useState<any[]>([]);
+  // const [searching, setSearching] = useState(false);
 
   const [meetingForm, setMeetingForm] = useState({
     title: '',
@@ -93,10 +93,10 @@ export default function ClubDetailScreen() {
     virtual_link: '',
   });
 
-  const [notesForm, setNotesForm] = useState({
-    notes: '',
-    questions: '',
-  });
+  // const [notesForm, setNotesForm] = useState({
+  //   notes: '',
+  //   questions: '',
+  // });
 
   useEffect(() => {
     // console.log('in useEffect');
@@ -116,8 +116,7 @@ export default function ClubDetailScreen() {
       const { data: currentClub, error: currentClubError } = await supabase
         .from('book_clubs')
         .select(
-          `
-          *,
+          ` *,
           books (
             id,
             title,
@@ -165,42 +164,6 @@ export default function ClubDetailScreen() {
     }
   };
 
-  const loadUserNotes = async () => {
-    console.log(club)
-    if (!club?.current_book_id) return;
-
-    try {
-      const { data: clubBookData } = await supabase
-        .from('club_books')
-        .select('id')
-        .eq('club_id', bookClubId)
-        .eq('book_id', club.current_book_id)
-        .single();
-
-      console.log(clubBookData)
-      console.log(clubBookData)
-
-      if (clubBookData) {
-        const { data } = await supabase
-          .from('user_book_notes')
-          .select('*')
-          .eq('user_id', user?.id)
-          .eq('club_book_id', clubBookData.id)
-          .single();
-
-        if (data) {
-          setUserNotes(data);
-          setNotesForm({
-            notes: data.notes,
-            questions: data.questions || '',
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Error loading user notes:', error);
-    }
-  };
-
   const loadMeetings = async () => {
     try {
       const { data } = await supabase
@@ -217,8 +180,6 @@ export default function ClubDetailScreen() {
       console.error('Error loading meetings:', error);
     }
   };
-
-
 
   const setCurrentBook = async (bookData: any) => {
     try {
@@ -316,83 +277,6 @@ export default function ClubDetailScreen() {
       Alert.alert('Error', error.message);
     }
   };
-
-  // const saveNotes = async () => {
-  //   if (!club?.current_book_id) return;
-
-  //   try {
-  //     const { data: clubBookData } = await supabase
-  //       .from('club_books')
-  //       .select('id')
-  //       .eq('club_id', bookClubId)
-  //       .eq('book_id', club.current_book_id)
-  //       .single();
-
-  //     if (!clubBookData) return;
-
-  //     if (userNotes) {
-  //       // Update existing notes
-  //       const { error } = await supabase
-  //         .from('user_book_notes')
-  //         .update({
-  //           notes: notesForm.notes,
-  //           questions: notesForm.questions || null,
-  //           updated_at: new Date().toISOString(),
-  //         })
-  //         .eq('id', userNotes.id);
-
-  //       if (error) throw error;
-  //     } else {
-  //       // Create new notes
-  //       const { error } = await supabase.from('user_book_notes').insert({
-  //         user_id: user?.id!,
-  //         club_book_id: clubBookData.id,
-  //         notes: notesForm.notes,
-  //         questions: notesForm.questions || null,
-  //       });
-
-  //       if (error) throw error;
-  //     }
-
-  //     setShowNotesModal(false);
-  //     loadUserNotes();
-  //     Alert.alert('Success', 'Notes saved!');
-  //   } catch (error: any) {
-  //     Alert.alert('Error', error.message);
-  //   }
-  // };
-
-  // const revealNotes = async () => {
-  //   if (!club?.current_book_id) return;
-
-  //   Alert.alert(
-  //     'Reveal Notes & Questions',
-  //     'This will make all member notes and questions visible to everyone in the club. This action cannot be undone.',
-  //     [
-  //       { text: 'Cancel', style: 'cancel' },
-  //       {
-  //         text: 'Reveal',
-  //         style: 'destructive',
-  //         onPress: async () => {
-  //           try {
-  //             const { error } = await supabase
-  //               .from('club_books')
-  //               .update({ notes_revealed: true })
-  //               .eq('club_id', bookClubId)
-  //               .eq('book_id', club.current_book_id);
-
-  //             if (error) throw error;
-
-  //             loadClubDetails();
-  //             Alert.alert('Success', 'Notes and questions revealed!');
-  //           } catch (error: any) {
-  //             Alert.alert('Error', error.message);
-  //           }
-  //         },
-  //       },
-  //     ],
-  //   );
-  // };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
