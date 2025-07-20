@@ -76,7 +76,7 @@ const WebHeader = ({ /*, onSignOut, userAvatarUrl, userDisplayName */ }: WebHead
         <View className="mt-4 w-full flex-col space-y-3">
           {user ? (
             <>
-              <NavLink href="/account" isSidebar={true}>Profile</NavLink>
+              <NavLink href="/profile" isSidebar={true}>Profile</NavLink>
               <SignOutButtonWeb onConfirmSignOut={handleSignOut} />
             </>
           ) : (
