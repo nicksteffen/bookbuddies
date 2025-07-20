@@ -44,9 +44,9 @@ interface Book {
 export default function LibraryScreen() {
   const { user } = useAuth();
   const [books, setBooks] = useState<{
-    reading_now: Book[];
-    read: Book[];
-    want_to_read: Book[];
+    reading_now: BookData[];
+    read: BookData[];
+    want_to_read: BookData[];
   }>({
     reading_now: [],
     read: [],
@@ -63,6 +63,8 @@ export default function LibraryScreen() {
 
   const loadUserBooks = async () => {
     try {
+      //list_type being added to the select from the userBookLists table?
+      // this is where the book interface was used, but could be BookListBook or something?
       const { data } = await supabase
         .from('user_book_lists')
         .select(`
@@ -83,8 +85,9 @@ export default function LibraryScreen() {
           reading_now: [],
           read: [],
           want_to_read: [],
-        } as { [key: string]: Book[] };
+        } as { [key: string]: BookData[] };
 
+        // this is the list type issue with book vs book data
         data.forEach((item: any) => {
           if (item.books && organizedBooks[item.list_type]) {
             organizedBooks[item.list_type].push({
@@ -239,18 +242,7 @@ export default function LibraryScreen() {
     );
   };
 
-  const getListIcon = (listType: string) => {
-    switch (listType) {
-      case 'reading_now':
-        return <BookOpen size={20} color={ICON_COLORS.primary} />;
-      case 'read':
-        return <Star size={20} color={ICON_COLORS.emerald} />;
-      case 'want_to_read':
-        return <Heart size={20} color={ICON_COLORS.red} />;
-      default:
-        return <BookOpen size={20} color={ICON_COLORS.mutedForeground} />;
-    }
-  };
+
 
   const getListTitle = (listType: string) => {
     switch (listType) {
@@ -322,7 +314,7 @@ export default function LibraryScreen() {
   
 
   
-  const bookButtons = (book: Book, listType:string) => (
+  const bookButtons = (book: BookData, listType:string) => (
     <View className="flex-row gap-2">
       {listType === 'want_to_read' && (
         <TouchableOpacity
@@ -349,7 +341,7 @@ export default function LibraryScreen() {
     </View>
   )
   
-  const renderBookCard = (book: Book, listType:string) => (
+  const renderBookCard = (book: BookData, listType:string) => (
     <View key={book.id}>
       <BookCard book={book} />
       { bookButtons(book, listType) }
@@ -359,7 +351,7 @@ export default function LibraryScreen() {
   if (loading) {
     return (
       <SafeAreaView className="flex-1 bg-background justify-center items-center">
-        <ActivityIndicator size="large" color={ICON_COLORS.primary} />
+        <ActivityIndicator size="large" />
       </SafeAreaView>
     );
   }
@@ -412,7 +404,7 @@ export default function LibraryScreen() {
         isVisible={showBookModal}
         onClose={() => setShowBookModal(false)}
         onBookSelected={addBookToList}
-        initialListType='want_to_read'
+        initialListType={selectedList}
         modalTitle='Add Book'
         />
       

@@ -31,18 +31,8 @@ export default function SignOutButtonWeb({ onConfirmSignOut }: SignOutButtonWebP
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        {/*
-          Refactored:
-          - No icon
-          - variant="outline" for outline style
-          - Using amber-600 for a "burnt orange" look
-          - Adjusted hover/active states for the outline style
-        */}
         <Button
           variant="outline"
-          // className="text-amber-600 border-amber-600 hover:bg-amber-600/10 hover:text-amber-700
-                     // active:bg-amber-600/20 focus:ring-amber-600/50"
-                     
           className="text-primary-dark border-primary-dark hover:bg-primary/90 hover:text-primary-foreground"
         >
           Sign Out
