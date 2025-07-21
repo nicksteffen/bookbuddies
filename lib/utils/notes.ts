@@ -2,13 +2,17 @@ import { ClubMemberPublicView, GroupedUserNote, UserNote } from "@/types/notes";
 import { supabase } from "../supabase";
 
 export async function getGroupedNotesByMember(clubBookId: string): Promise<GroupedUserNote[]> {
-  // 1. Fetch all user_book_notes for the given club_book_id
+  // 1. Fetch all user_book_notes for the given club_book_id,
+  //    and directly join the public_profiles table for display_name and profile_picture_url.
+  //    Supabase will return public_profiles as a nested object within each note.
   const { data: userNotes, error: notesError } = await supabase
     .from('user_book_notes')
-    .select('*')
-    .eq('club_book_id', clubBookId);
-  
-    // .returns<UserNote[]>(); // Assert the return type
+    .select(`
+      *,
+      public_profiles(display_name, profile_picture_url)
+    `)
+    .eq('club_book_id', clubBookId)
+    // .returns<UserNote[]>(); // Assert the return type based on the new UserNote structure
 
   if (notesError) {
     console.error("Error fetching user notes:", notesError);
@@ -20,60 +24,43 @@ export async function getGroupedNotesByMember(clubBookId: string): Promise<Group
     return [];
   }
 
-  // 2. Extract all unique user_ids from the fetched notes
-  const uniqueUserIds = [...new Set(userNotes.map(note => note.user_id))];
+  // The second query to 'club_members_public_view' is now redundant and removed.
+  // The public profile data is already available via the join in the first query.
 
-  // 3. Fetch all relevant club_members_public_view entries in a single query
-  const { data: clubMembers, error: membersError } = await supabase
-    .from('club_members_public_view')
-    .select('user_id, display_name, profile_picture_url')
-    .in('user_id', uniqueUserIds) // Filter to only fetch relevant members
-    // .returns<ClubMemberPublicView[]>(); // Assert the return type
-    ;
-
-  if (membersError) {
-    console.error("Error fetching club member profiles:", membersError);
-    return []; // Handle this error as you see fit
-  }
-
-  // 4. Create a Map for efficient lookup of member info by user_id
-  const memberInfoMap = new Map<string, { displayName: string; profilePicture: string | null }>();
-  if (clubMembers) {
-    clubMembers.forEach(member => {
-      memberInfoMap.set(member.user_id, {
-        displayName: member.display_name,
-        profilePicture: member.profile_picture_url,
-      });
-    });
-  }
-
-  // 5. Group notes by user and prepare the final structured data
+  // 2. Group notes by user and prepare the final structured data.
+  //    We'll use a Map to efficiently build the grouped structure.
   const groupedNotesMap = new Map<string, GroupedUserNote>();
 
   userNotes.forEach(note => {
     const userId = note.user_id;
     let userGroup = groupedNotesMap.get(userId);
 
+    // Get the joined public profile data for this note
+    const publicProfile: PublicProfileJoined | null | undefined = note.public_profiles;
+
     if (!userGroup) {
-      const memberInfo = memberInfoMap.get(userId) || {
-        displayName: 'Unknown User',
-        profilePicture: null,
-      };
+      // If this is the first note for this user, create their group entry
+      const displayName = publicProfile?.display_name || 'Unknown User';
+      const profilePicture = publicProfile?.profile_picture_url || null;
+
       userGroup = {
         userId: userId,
-        displayName: memberInfo.displayName,
-        profilePicture: memberInfo.profilePicture,
-        notes: [],
+        displayName: displayName,
+        profilePicture: profilePicture,
+        notes: [], // Initialize an empty array for notes
       };
       groupedNotesMap.set(userId, userGroup);
     }
 
+    // Add the current note to this user's notes array.
+    // The 'note' object already contains the public_profiles data if you need it later.
     userGroup.notes.push(note);
   });
 
-  // 6. Convert the Map values into an array for rendering
+  // 3. Convert the Map values into an array for rendering (e.g., with FlatList).
   const finalGroupedData = Array.from(groupedNotesMap.values());
 
+  // Optional: Sort users by display name or some other criteria
   finalGroupedData.sort((a, b) => a.displayName.localeCompare(b.displayName));
 
   return finalGroupedData;

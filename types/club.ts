@@ -5,7 +5,7 @@ export interface Member {
   user_id: string;
   status: 'pending' | 'approved' | 'declined';
   created_at: string;
-  profiles: {
+  public_profiles: {
     display_name: string | null;
     email: string;
   };
@@ -26,8 +26,10 @@ export interface PublicClubMember {
   user_id: string;
   status: 'pending' | 'approved' | 'declined';
   created_at: string;
-  display_name: string | null;
-  profile_picture_url: string | null;
+  public_profiles: {
+    display_name: string | null;
+    profile_picture_url: string | null;
+  };
 }
 
 export interface UserNotes {

@@ -1,15 +1,8 @@
 import { View,  Text, TouchableOpacity } from "react-native";
 import MemberAvatarWithName from "./MemberAvatarWithName";
 import RemoveMemberButton from "./RemoveMember";
+import { PublicClubMember } from "@/types/club";
 
-interface PublicClubMember {
-  id: string;
-  user_id: string;
-  status: 'pending' | 'approved' | 'declined';
-  created_at: string;
-  display_name: string | null;
-  profile_picture_url: string | null;
-}
 
 interface ClubMemberCardProps {
   member: PublicClubMember;
@@ -25,7 +18,7 @@ export default function ClubMemberCard({ member, club_admin_user_id, updateMembe
       <View key={member.id} className="bg-card rounded-lg p-4 flex-row justify-between items-center shadow-md">
         {/* Member Status and Info */}
         <View className="flex-1">
-          <MemberAvatarWithName displayName={member.display_name || ''} profilePictureUrl={member.profile_picture_url}/>
+          <MemberAvatarWithName displayName={member.public_profiles.display_name || ''} profilePictureUrl={member.public_profiles.profile_picture_url}/>
           <Text
             className={`
               text-xs font-inter-semibold uppercase
