@@ -4,11 +4,13 @@ import { StatusBar } from 'expo-status-bar';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { AuthProvider } from '../contexts/AuthContext';
 import 'react-native-url-polyfill/auto';
+import { Platform } from 'react-native';
+import { WebAlertProvider } from '@/contexts/WebAlertProvider';
 
 export default function RootLayout() {
   useFrameworkReady();
-
-  return (
+  
+  const app = (
     <AuthProvider>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(auth)" />
@@ -17,5 +19,14 @@ export default function RootLayout() {
       </Stack>
       <StatusBar style="auto" />
     </AuthProvider>
+    )
+
+  if (Platform.OS === 'web') {
+      console.log("Wrapping in WebAlertProvider");
+      return <WebAlertProvider>{app}</WebAlertProvider>;
+    } 
+
+  return (
+    app
   );
 }
