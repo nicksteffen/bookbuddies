@@ -22,7 +22,6 @@ export default function RootLayout() {
     )
 
   if (Platform.OS === 'web') {
-      console.log("Wrapping in WebAlertProvider");
       return <WebAlertProvider>{app}</WebAlertProvider>;
     } 
 
