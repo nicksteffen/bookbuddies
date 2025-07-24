@@ -1,11 +1,19 @@
 import { Book } from "@/types/book";
 import { View, Text, Image } from "react-native";
+import StarRating from "./StarRating";
+import { useEffect, useState } from "react";
+import { Link } from "expo-router";
 
 interface BookCardProps {
   book: Book;
+  bookRating?: number
 }
 
-export default function BookCard({ book }: { book: Book }) {
+export default function BookCard({ book, bookRating }: BookCardProps){
+  const [ rating, setRating ] = useState(bookRating || 0);
+  useEffect(() => {
+    setRating(bookRating || 0);
+  }, [book, bookRating]);
   return (
     <View className="flex flex-row gap-4 mb-4">
       {!!book.cover_url ? (
@@ -22,6 +30,7 @@ export default function BookCard({ book }: { book: Book }) {
         <Text className="text-lg font-semibold text-gray-800 mb-1">
           {book.title}
         </Text>
+        <StarRating rating={rating} />
         <Text className="text-base text-gray-600 mb-2">
           {book.author}
         </Text>
@@ -35,6 +44,9 @@ export default function BookCard({ book }: { book: Book }) {
             {book.synopsis}
           </Text>
         )}
+        <Link href={`/book/${book.id}`}>
+          <Text className="text-primary mt-4 font-semibold">View Details</Text>
+        </Link>
       </View>
     </View> 
     

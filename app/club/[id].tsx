@@ -1,4 +1,4 @@
-"use client"
+'use client';
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -12,7 +12,7 @@ import {
   TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import {
   BookOpen,
   Calendar,
@@ -31,8 +31,6 @@ import Members from '@/components/clubPage/Members';
 import CurrentBookSection from '@/components/clubPage/CurrentBookSection';
 import BookSelectionModal from '@/components/clubPage/BookSelectionModal';
 import { ClubDetails } from '@/types/club';
-
-
 
 interface Member {
   id: string;
@@ -93,26 +91,16 @@ export default function ClubDetailScreen() {
     virtual_link: '',
   });
 
-  // const [notesForm, setNotesForm] = useState({
-  //   notes: '',
-  //   questions: '',
-  // });
-
   useEffect(() => {
-    // console.log('in useEffect');
-    // console.log(bookClubId && user);
     if (bookClubId && user) {
       loadClubDetails();
-      // loadUserNotes();
       loadMeetings();
     }
   }, [bookClubId, user]);
 
   const loadClubDetails = async () => {
-    console.log("parent load clubn detials")
+    console.log('parent load clubn detials');
     try {
-
-
       const { data: currentClub, error: currentClubError } = await supabase
         .from('book_clubs')
         .select(
@@ -222,17 +210,18 @@ export default function ClubDetailScreen() {
       if (clubError) throw clubError;
 
       // Create club_books entry
-      const { error : clubBookError} = await supabase
-        .from('club_books')
-        .upsert({
+      const { error: clubBookError } = await supabase.from('club_books').upsert(
+        {
           club_id: bookClubId,
           book_id: bookId,
           status: 'current',
           notes_revealed: false,
-        }, { 
-          onConflict: 'club_id,book_id',  // Specify the unique constraint columns
-          ignoreDuplicates: false  // This ensures the row is updated if it exists
-        });
+        },
+        {
+          onConflict: 'club_id,book_id', // Specify the unique constraint columns
+          ignoreDuplicates: false, // This ensures the row is updated if it exists
+        },
+      );
 
       if (clubBookError) throw clubBookError;
 
@@ -293,7 +282,8 @@ export default function ClubDetailScreen() {
     return (
       <SafeAreaView className="flex-1 bg-gray-50">
         <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="rgb(59, 130, 246)" />{/* blue-500 */}
+          <ActivityIndicator size="large" color="rgb(59, 130, 246)" />
+          {/* blue-500 */}
         </View>
       </SafeAreaView>
     );
@@ -316,44 +306,73 @@ export default function ClubDetailScreen() {
       <ScrollView contentContainerStyle={{ padding: 20 }}>
         {/* Club Header */}
         <View className="bg-white rounded-xl p-6 mb-6 shadow-md">
-          <Text className="text-2xl font-bold text-gray-800 mb-2">{club.name}</Text>
+          <Text className="text-2xl font-bold text-gray-800 mb-2">
+            {club.name}
+          </Text>
           {club.description && (
-            <Text className="text-base text-gray-600 mb-3">{club.description}</Text>
+            <Text className="text-base text-gray-600 mb-3">
+              {club.description}
+            </Text>
           )}
           {isAdmin && (
             <View className="flex flex-row items-center gap-1.5 self-start">
-              <Crown size={16} color="rgb(245, 158, 11)" />{/* amber-500 */}
-              <Text className="text-sm text-amber-500 font-semibold">Admin</Text>
+              <Crown size={16} color="rgb(245, 158, 11)" />
+              {/* amber-500 */}
+              <Text className="text-sm text-amber-500 font-semibold">
+                Admin
+              </Text>
             </View>
           )}
         </View>
 
-        <CurrentBookSection showBookModal={() => setShowBookModal(true)} loadClubDetails={loadClubDetails} club={club} isAdmin={isAdmin} isMember={isMember} />
+        <CurrentBookSection
+          showBookModal={() => setShowBookModal(true)}
+          loadClubDetails={loadClubDetails}
+          club={club}
+          isAdmin={isAdmin}
+          isMember={isMember}
+        />
+        <Link href={`/club/${bookClubId}/book/${club.current_book_id}`} asChild>
+          <TouchableOpacity>
+            <Text>View Club Page!!</Text>
+          </TouchableOpacity>
+        </Link>
 
         {/* Meetings Section */}
         <View className="mb-6">
           <View className="flex flex-row justify-between items-center mb-4">
-            <Text className="text-xl font-semibold text-gray-800">Upcoming Meetings</Text>
+            <Text className="text-xl font-semibold text-gray-800">
+              Upcoming Meetings
+            </Text>
             {isAdmin && (
               <TouchableOpacity
                 className="p-2"
                 onPress={() => setShowMeetingModal(true)}
               >
-                <Plus size={16} color="rgb(59, 130, 246)" />{/* blue-500 */}
+                <Plus size={16} color="rgb(59, 130, 246)" />
+                {/* blue-500 */}
               </TouchableOpacity>
             )}
           </View>
 
           {meetings.length === 0 ? (
             <View className="bg-white rounded-xl p-6 items-center shadow-md">
-              <Calendar size={24} color="rgb(156, 163, 175)" />{/* gray-400 */}
-              <Text className="text-sm text-gray-400 mt-2">No upcoming meetings</Text>
+              <Calendar size={24} color="rgb(156, 163, 175)" />
+              {/* gray-400 */}
+              <Text className="text-sm text-gray-400 mt-2">
+                No upcoming meetings
+              </Text>
             </View>
           ) : (
             <View className="gap-3">
               {meetings.map((meeting) => (
-                <View key={meeting.id} className="bg-white rounded-xl p-4 shadow-md">
-                  <Text className="text-base font-semibold text-gray-800 mb-1">{meeting.title}</Text>
+                <View
+                  key={meeting.id}
+                  className="bg-white rounded-xl p-4 shadow-md"
+                >
+                  <Text className="text-base font-semibold text-gray-800 mb-1">
+                    {meeting.title}
+                  </Text>
                   <Text className="text-sm text-gray-600 mb-1">
                     {formatDate(meeting.date_time)}
                   </Text>
@@ -363,7 +382,9 @@ export default function ClubDetailScreen() {
                     </Text>
                   )}
                   {meeting.virtual_link && (
-                    <Text className="text-sm text-blue-500">🔗 Virtual Meeting</Text>
+                    <Text className="text-sm text-blue-500">
+                      🔗 Virtual Meeting
+                    </Text>
                   )}
                 </View>
               ))}
@@ -372,7 +393,11 @@ export default function ClubDetailScreen() {
         </View>
 
         {isAdmin && (
-          <Members initialClub={club} bookClubId={bookClubId} isAdmin={isAdmin} />
+          <Members
+            initialClub={club}
+            bookClubId={bookClubId}
+            isAdmin={isAdmin}
+          />
         )}
       </ScrollView>
 
@@ -387,15 +412,21 @@ export default function ClubDetailScreen() {
             <TouchableOpacity onPress={() => setShowMeetingModal(false)}>
               <Text className="text-base text-gray-600">Cancel</Text>
             </TouchableOpacity>
-            <Text className="text-lg font-semibold text-gray-800">Schedule Meeting</Text>
+            <Text className="text-lg font-semibold text-gray-800">
+              Schedule Meeting
+            </Text>
             <TouchableOpacity onPress={createMeeting}>
-              <Text className="text-base text-blue-500 font-semibold">Create</Text>
+              <Text className="text-base text-blue-500 font-semibold">
+                Create
+              </Text>
             </TouchableOpacity>
           </View>
 
           <ScrollView className="flex-1 p-5">
             <View className="mb-6">
-              <Text className="text-base font-semibold text-gray-800 mb-2">Meeting Title *</Text>
+              <Text className="text-base font-semibold text-gray-800 mb-2">
+                Meeting Title *
+              </Text>
               <TextInput
                 className="border border-gray-300 rounded-xl p-4 text-base bg-gray-50"
                 placeholder="e.g., Book Discussion"
@@ -407,7 +438,9 @@ export default function ClubDetailScreen() {
             </View>
 
             <View className="mb-6">
-              <Text className="text-base font-semibold text-gray-800 mb-2">Date & Time *</Text>
+              <Text className="text-base font-semibold text-gray-800 mb-2">
+                Date & Time *
+              </Text>
               <TextInput
                 className="border border-gray-300 rounded-xl p-4 text-base bg-gray-50"
                 placeholder="YYYY-MM-DD HH:MM"
@@ -419,7 +452,9 @@ export default function ClubDetailScreen() {
             </View>
 
             <View className="mb-6">
-              <Text className="text-base font-semibold text-gray-800 mb-2">Location</Text>
+              <Text className="text-base font-semibold text-gray-800 mb-2">
+                Location
+              </Text>
               <TextInput
                 className="border border-gray-300 rounded-xl p-4 text-base bg-gray-50"
                 placeholder="Physical location"
@@ -431,7 +466,9 @@ export default function ClubDetailScreen() {
             </View>
 
             <View className="mb-6">
-              <Text className="text-base font-semibold text-gray-800 mb-2">Virtual Link</Text>
+              <Text className="text-base font-semibold text-gray-800 mb-2">
+                Virtual Link
+              </Text>
               <TextInput
                 className="border border-gray-300 rounded-xl p-4 text-base bg-gray-50"
                 placeholder="Zoom, Meet, etc."
@@ -445,14 +482,12 @@ export default function ClubDetailScreen() {
         </SafeAreaView>
       </Modal>
 
-
       <BookSelectionModal
         isVisible={showBookModal}
         onClose={() => setShowBookModal(false)}
         onBookSelected={setCurrentBook}
-        modalTitle='Select Current Book'
+        modalTitle="Select Current Book"
       />
-      
     </SafeAreaView>
   );
 }

@@ -132,7 +132,7 @@ export default function LoginScreen() {
 
             <View className="flex-row justify-center items-center mt-8">
               <Text className="text-base text-gray-500">Don't have an account? </Text>
-              <Link href="/(auth)/signup" className="ml-1">
+              <Link href="/(auth)/signup" className="ml-1" asChild >
                 <Text className="text-base text-blue-600 font-semibold">Sign Up</Text>
               </Link>
             </View>
