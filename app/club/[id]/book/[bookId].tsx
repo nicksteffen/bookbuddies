@@ -8,6 +8,7 @@ import { ClubBook } from '@/types/club';
 import { ClubMemberEntry, fetchClubBookData } from '@/lib/utils/clubs';
 import BookTextEntrySection from '@/components/BookTextEntrySection';
 import StarRating from '@/components/StarRating';
+import MemberNoteInfo from '@/components/MemberNoteInfo';
 
 export default function ClubBookDetailPage() {
   const { id: bookClubId, bookId } = useLocalSearchParams();
@@ -63,58 +64,28 @@ export default function ClubBookDetailPage() {
     loadClubMemberBookDetails();
   }, [clubBookDetails]);
 
-  const memberInfo = (user: ClubMemberEntry) => (
-    <View key={user.user_id} className="mb-6 border-b border-gray-200 pb-6">
-      {/* Header: Profile + Name */}
-      <View className="flex-row items-center mb-3">
-        {user.profile_picture_url ? (
-          <Image
-            source={{ uri: user.profile_picture_url }}
-            className="w-14 h-14 rounded-full mr-4 border-2 border-blue-500"
-          />
-        ) : (
-          <View className="w-14 h-14 rounded-full mr-4 bg-gray-300 items-center justify-center">
-            <Text className="text-white text-xl font-bold">
-              {user.display_name ? user.display_name[0].toUpperCase() : 'U'}
-            </Text>
-          </View>
-        )}
-        <Text className="text-xl font-semibold text-gray-800">
-          {user.display_name}
-        </Text>
-      </View>
-
-      {/* Rating */}
-      {user.rating !== null && (
-        <View className="mb-3">
-          <StarRating rating={user.rating} />
-        </View>
-      )}
-
-      {/* Notes */}
-      <BookTextEntrySection title="Notes" textEntries={user.notes || []} />
-
-      {/* Questions */}
-      <BookTextEntrySection title="Questions" textEntries={user.questions || []} />
-    </View>
-  );
-
   if (!book) {
     return (
       <View>
-        <Text> Error Pge, no book</Text>
+        <Text> Error Page, no book</Text>
       </View>
     );
   }
 
   return (
-  <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView className="flex-1 bg-background">
       <BookDetailCard
         book={book}
         userRating={clubBookDetails?.average_rating || 5}
       />
       <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 20 }}>
-        {!!memberBookData && memberBookData.map((user) => memberInfo(user))}
+        {!!memberBookData && (
+          <View>
+            {memberBookData.map((user) => (
+              <MemberNoteInfo user={user} key={user.user_id} />
+            ))}
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

@@ -11,7 +11,8 @@ import { Button } from './ui/button';
 
 // Import the new/updated components
 import SignOutButtonWeb from '@/components/SignOutButtonWeb';
-import AvatarProfileButtonWeb from '@/components/AvatarProfileButtonWeb';
+import AvatarProfileButtonWeb from '@/components/avatarProfileButtonWeb';
+// import AvatarProfileButtonWeb from './avatarProfileButtonWeb';
 import LoginButtonWeb from '@/components/LoginButtonWeb';
 import SignUpButtonWeb from '@/components/SignUpButtonWeb';
 
@@ -66,8 +67,11 @@ const WebHeader =
       `}
         asChild
       >
-        <Button variant="outline"
-          onClick={() => { if (isSidebar) setIsSidebarOpen(false); }} 
+        <Button
+          variant="outline"
+          onClick={() => {
+            if (isSidebar) setIsSidebarOpen(false);
+          }}
         >
           {children}
         </Button>
