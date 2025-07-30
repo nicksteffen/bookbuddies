@@ -135,17 +135,22 @@ export default function NotesButtons({
           {/* New: View Notes Button - Only show if notesRevealed is true */}
           {notesRevealed && clubBookIdForNotesPage && (
             <Link
+              href={`/club/${club.id}/book/${club.current_book_id}`}
+              asChild
+            >
+              {/*
+            <Link
               href={{
                 pathname: `/notes/[clubBookId]`,
                 params: { clubBookId: clubBookIdForNotesPage },
               }}
               asChild
-            >
+            > */}
               <TouchableOpacity className="flex-grow flex-row items-center justify-center gap-2 bg-amber-600 rounded-lg py-3 px-4 min-w-[150px]">
                 <View className="flex-row items-center gap-2">
                   <BookOpen size={16} color="rgb(255,255,255)" />
                   <Text className="text-lg font-semibold text-white">
-                    View All Notes
+                    View Club Discussion
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -204,16 +209,20 @@ export default function NotesButtons({
           {/* New: Web View Notes Button - Only show if notesRevealed is true */}
           {notesRevealed && clubBookIdForNotesPage && (
             <Link
+              href={`/club/${club.id}/book/${club.current_book_id}`}
+              asChild
+            >
+              {/* <Link
               href={{
                 pathname: `/notes/[clubBookId]`,
                 params: { clubBookId: clubBookIdForNotesPage },
               }}
               asChild
-            >
+            > */}
               <Button className="flex-grow flex-row items-center justify-center gap-2 bg-amber-600 rounded-lg py-3 px-4 min-w-[150px]">
                 <BookOpen size={16} color="rgb(255, 255, 255)" />
                 <span className="text-white text-sm font-semibold">
-                  View All Notes
+                  View Club Discussion
                 </span>
               </Button>
             </Link>

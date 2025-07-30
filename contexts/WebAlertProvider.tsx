@@ -1,13 +1,28 @@
 // WebAlertProvider.tsx (Web only)
 import { createContext, useState } from 'react';
-import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from '@/components/ui/alert-dialog';
 
 export const WebAlertContext = createContext({
-  show: (args: { title: string; message?: string; onConfirm?: () => void }) => {},
+  show: (args: {
+    title: string;
+    message?: string;
+    onConfirm?: () => void;
+  }) => {},
 });
 
-export const WebAlertProvider = ({ children }: { children: React.ReactNode }) => {
-  console.log("web alert provider")
+export const WebAlertProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
+  console.log('web alert provider');
   const [alertData, setAlertData] = useState<null | {
     title: string;
     message?: string;
@@ -22,7 +37,11 @@ export const WebAlertProvider = ({ children }: { children: React.ReactNode }) =>
     <WebAlertContext.Provider value={{ show }}>
       {children}
       {alertData && (
-        <AlertDialog open onOpenChange={(open) => !open && close()}>
+        <AlertDialog
+          open
+          onOpenChange={(open) => !open && close()}
+          z-index={1000}
+        >
           <AlertDialogContent>
             <AlertDialogHeader>
               <h3>{alertData.title}</h3>
@@ -30,10 +49,12 @@ export const WebAlertProvider = ({ children }: { children: React.ReactNode }) =>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel onClick={close}>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={() => {
-                alertData.onConfirm?.();
-                close();
-              }}>
+              <AlertDialogAction
+                onClick={() => {
+                  alertData.onConfirm?.();
+                  close();
+                }}
+              >
                 OK
               </AlertDialogAction>
             </AlertDialogFooter>

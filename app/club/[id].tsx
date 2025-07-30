@@ -1,4 +1,4 @@
-'use client';
+// 'use client';
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Modal,
   TextInput,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
@@ -31,6 +32,10 @@ import Members from '@/components/clubPage/Members';
 import CurrentBookSection from '@/components/clubPage/CurrentBookSection';
 import BookSelectionModal from '@/components/clubPage/BookSelectionModal';
 import { ClubDetails } from '@/types/club';
+import MeetingsModal from '@/components/clubPage/MeetingsModal';
+import { useAlert } from '@/lib/utils/useAlert';
+import WebDateTimePicker from '@/components/WebDateTimePicker';
+import MeetingsDialog from '@/components/clubPage/MeetingsDialog';
 
 interface Member {
   id: string;
@@ -50,25 +55,22 @@ interface UserNotes {
   updated_at: string;
 }
 
-interface Meeting {
-  id: string;
+export interface Meeting {
+  id?: string;
   title: string;
   date_time: string;
   location: string | null;
   virtual_link: string | null;
-  created_by: string;
+  created_by?: string;
 }
 
 export default function ClubDetailScreen() {
-  // console.log('loading page correctly');
+  const { showAlert } = useAlert();
 
   const { id: bookClubId } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
-  // const router = useRouter();
 
   const [club, setClub] = useState<ClubDetails | null>(null);
-  const [members, setMembers] = useState<Member[]>([]);
-  const [userNotes, setUserNotes] = useState<UserNotes | null>(null);
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -77,18 +79,23 @@ export default function ClubDetailScreen() {
   // Modal states
   const [showBookModal, setShowBookModal] = useState(false);
   const [showMeetingModal, setShowMeetingModal] = useState(false);
+  const [showMeetingDialog, setShowMeetingDialog] = useState(false);
   const [showNotesModal, setShowNotesModal] = useState(false);
 
-  // Form states
-  // const [bookSearch, setBookSearch] = useState('');
-  // const [bookResults, setBookResults] = useState<any[]>([]);
-  // const [searching, setSearching] = useState(false);
-
+  const setShowMeeting = (value: boolean) => {
+    if (Platform.OS === 'web') {
+      setShowMeetingDialog(value);
+    } else {
+      setShowMeetingModal(value);
+    }
+  };
   const [meetingForm, setMeetingForm] = useState({
+    id: '',
     title: '',
     date_time: '',
     location: '',
     virtual_link: '',
+    created_by: '',
   });
 
   useEffect(() => {
@@ -169,6 +176,23 @@ export default function ClubDetailScreen() {
     }
   };
 
+  const handleEditMeeting = (meeting: Meeting) => {
+    // Implement logic to edit meeting
+    // TODO need to pass a meeting object to the modal
+    // refactor to have setMeetingData instead of form, then,
+    // only use the form in the modal
+    setMeetingForm({
+      id: meeting?.id || '',
+      title: meeting?.title,
+      date_time: meeting?.date_time,
+      location: meeting?.location || '',
+      virtual_link: meeting?.virtual_link || '',
+      created_by: meeting?.created_by || '',
+    });
+    // setShowMeetingModal(true);
+    setShowMeeting(true);
+  };
+
   const setCurrentBook = async (bookData: any) => {
     try {
       // First, create or get the book
@@ -235,35 +259,45 @@ export default function ClubDetailScreen() {
     }
   };
 
-  const createMeeting = async () => {
+  const createMeeting = async (meetingForm: {
+    title: any;
+    date_time: any;
+    location: any;
+    virtual_link: any;
+    id?: string; // Add optional id to handle updating an existing meeting
+  }) => {
+    console.log('try create/updating meeting');
+    console.log(meetingForm);
+
     if (!meetingForm.title || !meetingForm.date_time) {
-      Alert.alert('Error', 'Please fill in title and date/time');
+      showAlert('Error', 'Please fill in title and date/time');
       return;
     }
 
     try {
-      const { error } = await supabase.from('club_meetings').insert({
+      const { error } = await supabase.from('club_meetings').upsert({
+        ...meetingForm, // Use spread operator to include optional id for updating
         club_id: bookClubId,
-        title: meetingForm.title,
-        date_time: meetingForm.date_time,
-        location: meetingForm.location || null,
-        virtual_link: meetingForm.virtual_link || null,
         created_by: user?.id!,
       });
 
       if (error) throw error;
 
-      setShowMeetingModal(false);
+      // setShowMeetingModal(false);
+      setShowMeeting(false);
+      // todo; instead of setMeetingForm, set the meeting data, but with no id or user
       setMeetingForm({
+        id: '',
         title: '',
         date_time: '',
         location: '',
         virtual_link: '',
+        created_by: '',
       });
       loadMeetings();
-      Alert.alert('Success', 'Meeting scheduled!');
+      showAlert('Success', 'Meeting scheduled/updated!');
     } catch (error: any) {
-      Alert.alert('Error', error.message);
+      showAlert('Error', error.message);
     }
   };
 
@@ -324,6 +358,7 @@ export default function ClubDetailScreen() {
             </View>
           )}
         </View>
+        {/* <WebDateTimePicker /> */}
 
         <CurrentBookSection
           showBookModal={() => setShowBookModal(true)}
@@ -332,11 +367,6 @@ export default function ClubDetailScreen() {
           isAdmin={isAdmin}
           isMember={isMember}
         />
-        <Link href={`/club/${bookClubId}/book/${club.current_book_id}`} asChild>
-          <TouchableOpacity>
-            <Text>View Club Page!!</Text>
-          </TouchableOpacity>
-        </Link>
 
         {/* Meetings Section */}
         <View className="mb-6">
@@ -347,7 +377,7 @@ export default function ClubDetailScreen() {
             {isAdmin && (
               <TouchableOpacity
                 className="p-2"
-                onPress={() => setShowMeetingModal(true)}
+                onPress={() => setShowMeeting(true)}
               >
                 <Plus size={16} color="rgb(59, 130, 246)" />
                 {/* blue-500 */}
@@ -386,6 +416,11 @@ export default function ClubDetailScreen() {
                       🔗 Virtual Meeting
                     </Text>
                   )}
+                  <TouchableOpacity onPress={() => handleEditMeeting(meeting)}>
+                    <Text className="text-sm text-blue-500">
+                      📝 Edit Meeting
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               ))}
             </View>
@@ -401,86 +436,20 @@ export default function ClubDetailScreen() {
         )}
       </ScrollView>
 
-      {/* Meeting Creation Modal */}
-      <Modal
-        visible={showMeetingModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
-      >
-        <SafeAreaView className="flex-1 bg-white">
-          <View className="flex-row justify-between items-center p-5 border-b border-gray-200">
-            <TouchableOpacity onPress={() => setShowMeetingModal(false)}>
-              <Text className="text-base text-gray-600">Cancel</Text>
-            </TouchableOpacity>
-            <Text className="text-lg font-semibold text-gray-800">
-              Schedule Meeting
-            </Text>
-            <TouchableOpacity onPress={createMeeting}>
-              <Text className="text-base text-blue-500 font-semibold">
-                Create
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView className="flex-1 p-5">
-            <View className="mb-6">
-              <Text className="text-base font-semibold text-gray-800 mb-2">
-                Meeting Title *
-              </Text>
-              <TextInput
-                className="border border-gray-300 rounded-xl p-4 text-base bg-gray-50"
-                placeholder="e.g., Book Discussion"
-                value={meetingForm.title}
-                onChangeText={(text) =>
-                  setMeetingForm({ ...meetingForm, title: text })
-                }
-              />
-            </View>
-
-            <View className="mb-6">
-              <Text className="text-base font-semibold text-gray-800 mb-2">
-                Date & Time *
-              </Text>
-              <TextInput
-                className="border border-gray-300 rounded-xl p-4 text-base bg-gray-50"
-                placeholder="YYYY-MM-DD HH:MM"
-                value={meetingForm.date_time}
-                onChangeText={(text) =>
-                  setMeetingForm({ ...meetingForm, date_time: text })
-                }
-              />
-            </View>
-
-            <View className="mb-6">
-              <Text className="text-base font-semibold text-gray-800 mb-2">
-                Location
-              </Text>
-              <TextInput
-                className="border border-gray-300 rounded-xl p-4 text-base bg-gray-50"
-                placeholder="Physical location"
-                value={meetingForm.location}
-                onChangeText={(text) =>
-                  setMeetingForm({ ...meetingForm, location: text })
-                }
-              />
-            </View>
-
-            <View className="mb-6">
-              <Text className="text-base font-semibold text-gray-800 mb-2">
-                Virtual Link
-              </Text>
-              <TextInput
-                className="border border-gray-300 rounded-xl p-4 text-base bg-gray-50"
-                placeholder="Zoom, Meet, etc."
-                value={meetingForm.virtual_link}
-                onChangeText={(text) =>
-                  setMeetingForm({ ...meetingForm, virtual_link: text })
-                }
-              />
-            </View>
-          </ScrollView>
-        </SafeAreaView>
-      </Modal>
+      <MeetingsModal
+        showMeetingModal={showMeetingModal}
+        onClose={() => setShowMeetingModal(false)}
+        // setShowMeetingModal={setShowMeetingModal}
+        createMeeting={createMeeting}
+        initialMeetingData={meetingForm}
+        // initialMeetingData={editMeetingData}
+      />
+      <MeetingsDialog
+        showMeetingDialog={showMeetingDialog}
+        onClose={() => setShowMeetingDialog(false)}
+        createMeeting={createMeeting}
+        initialMeetingData={meetingForm}
+      />
 
       <BookSelectionModal
         isVisible={showBookModal}
