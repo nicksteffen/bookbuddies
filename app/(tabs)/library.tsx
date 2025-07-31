@@ -12,13 +12,13 @@ import { Plus, Star, BookOpen, Heart } from 'lucide-react-native';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import BookCard from '@/components/BookCard';
-import BookSelectionModal from '@/components/clubPage/BookSelectionModal';
-import { Book as BookData } from '@/types/book'
+import BookSelectionModal from '@/components/BookSelectionModal';
+import { Book as BookData } from '@/types/book';
 import ReadingListDisplay from '@/components/ReadingListDisplay';
 import { useAlert } from '@/lib/utils/useAlert';
+import BookSelection from '@/components/BookSelection';
 
 type listType = 'reading_now' | 'read' | 'want_to_read';
-
 
 interface OrganizedBooks {
   reading_now: BookData[];
@@ -33,14 +33,16 @@ interface BookListItem {
 
 export default function LibraryScreen() {
   const { user } = useAuth();
-  const [books, setBooks] = useState< OrganizedBooks >({
+  const [books, setBooks] = useState<OrganizedBooks>({
     reading_now: [],
     read: [],
     want_to_read: [],
   });
   const [loading, setLoading] = useState(true);
 
-  const [selectedList, setSelectedList] = useState<'reading_now' | 'read' | 'want_to_read'>('want_to_read');
+  const [selectedList, setSelectedList] = useState<
+    'reading_now' | 'read' | 'want_to_read'
+  >('want_to_read');
   const [showBookModal, setShowBookModal] = useState(false);
   const { showAlert } = useAlert();
 
@@ -50,11 +52,12 @@ export default function LibraryScreen() {
 
   const loadUserBooks = async () => {
     try {
-      console.log("user")
-      console.log(user)
-      const { data } = await supabase
+      console.log('user');
+      console.log(user);
+      const { data } = (await supabase
         .from('user_book_lists')
-        .select(`
+        .select(
+          `
           list_type,
           books (
             id,
@@ -65,9 +68,9 @@ export default function LibraryScreen() {
             page_count,
             isbn
           )
-        `)
-        .eq('user_id', user?.id) as unknown as { data: BookListItem[] };
-
+        `,
+        )
+        .eq('user_id', user?.id)) as unknown as { data: BookListItem[] };
 
       if (data) {
         const organizedBooks = {
@@ -79,8 +82,7 @@ export default function LibraryScreen() {
         // this is the list type issue with book vs book data
         data.forEach((item) => {
           if (!!item.books && organizedBooks[item.list_type]) {
-            organizedBooks[item.list_type].push(
-            item.books)
+            organizedBooks[item.list_type].push(item.books);
           }
         });
         setBooks(organizedBooks);
@@ -127,7 +129,7 @@ export default function LibraryScreen() {
       }
 
       if (!bookId) {
-        throw new Error("Failed to obtain book ID after creation or lookup.");
+        throw new Error('Failed to obtain book ID after creation or lookup.');
       }
 
       const { data: existingEntry } = await supabase
@@ -147,20 +149,21 @@ export default function LibraryScreen() {
           if (error) throw error;
         } else {
           // Alert.alert('Info', `Book is already in your "${getListTitle(listType)}" list.`);
-          console.log("show alert")
-          showAlert('Info', `Book is already in your "${getListTitle(listType)}" list.`)
-          
+          console.log('show alert');
+          showAlert(
+            'Info',
+            `Book is already in your "${getListTitle(listType)}" list.`,
+          );
+
           loadUserBooks();
           return;
         }
       } else {
-        const { error } = await supabase
-          .from('user_book_lists')
-          .insert({
-            user_id: user?.id!,
-            book_id: bookId,
-            list_type: listType,
-          });
+        const { error } = await supabase.from('user_book_lists').insert({
+          user_id: user?.id!,
+          book_id: bookId,
+          list_type: listType,
+        });
 
         if (error) throw error;
       }
@@ -208,16 +211,19 @@ export default function LibraryScreen() {
         showAlert('Error', error.message || 'Failed to remove book.');
       }
     };
-    showAlert('Remove Book', 'Are you sure you want to remove this book from your library?', 
-      {onConfirm: removeAction},
+    showAlert(
+      'Remove Book',
+      'Are you sure you want to remove this book from your library?',
+      { onConfirm: removeAction },
       [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Remove',
-        style: 'destructive',
-        onPress: removeAction,
-      },
-    ]);
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: removeAction,
+        },
+      ],
+    );
   };
 
   const getListTitle = (listType: string) => {
@@ -233,15 +239,16 @@ export default function LibraryScreen() {
     }
   };
 
-  
-  const bookButtons = (book: BookData, listType:string) => (
+  const bookButtons = (book: BookData, listType: string) => (
     <View className="flex-row gap-2">
       {listType === 'want_to_read' && (
         <TouchableOpacity
           className="bg-primary rounded-md px-3 py-1.5 active:opacity-70"
           onPress={() => moveBook(book.id, listType, 'reading_now')}
         >
-          <Text className="text-primary-foreground text-xs font-semibold">Start Reading</Text>
+          <Text className="text-primary-foreground text-xs font-semibold">
+            Start Reading
+          </Text>
         </TouchableOpacity>
       )}
       {listType === 'reading_now' && (
@@ -249,24 +256,28 @@ export default function LibraryScreen() {
           className="bg-primary rounded-md px-3 py-1.5 active:opacity-70"
           onPress={() => moveBook(book.id, listType, 'read')}
         >
-          <Text className="text-primary-foreground text-xs font-semibold">Mark as Read</Text>
+          <Text className="text-primary-foreground text-xs font-semibold">
+            Mark as Read
+          </Text>
         </TouchableOpacity>
       )}
       <TouchableOpacity
         className="bg-muted rounded-md px-3 py-1.5 active:opacity-70"
         onPress={() => removeBook(book.id)}
       >
-        <Text className="text-muted-foreground text-xs font-semibold">Remove</Text>
+        <Text className="text-muted-foreground text-xs font-semibold">
+          Remove
+        </Text>
       </TouchableOpacity>
     </View>
-  )
-  
-  const renderBookCard = (book: BookData, listType:string) => (
+  );
+
+  const renderBookCard = (book: BookData, listType: string) => (
     <View key={book.id}>
       <BookCard book={book} />
-      { bookButtons(book, listType) }
+      {bookButtons(book, listType)}
     </View>
-  )
+  );
 
   if (loading) {
     return (
@@ -290,44 +301,53 @@ export default function LibraryScreen() {
 
       <ScrollView>
         <View className="p-5">
-          {(['reading_now', 'read', 'want_to_read'] as const).map((listType) => (
-            <View key={listType} className="mb-8">
-              <View className="flex-row items-center mb-4 gap-2">
-                <ReadingListDisplay listType={listType} size="large"/>
-                <Text className="text-muted-foreground text-base">({books[listType].length})</Text>
-              </View>
+          {(['reading_now', 'read', 'want_to_read'] as const).map(
+            (listType) => (
+              <View key={listType} className="mb-8">
+                <View className="flex-row items-center mb-4 gap-2">
+                  <ReadingListDisplay listType={listType} size="large" />
+                  <Text className="text-muted-foreground text-base">
+                    ({books[listType].length})
+                  </Text>
+                </View>
 
-              {books[listType].length === 0 ? (
-                <View className="bg-card rounded-xl p-8 items-center shadow-md">
-                  <Text className="text-muted-foreground text-base mb-4 text-center">No books in this list</Text>
-                  <TouchableOpacity
-                    className="bg-primary rounded-md px-4 py-3 active:opacity-70"
-                    onPress={() => {
-                      setSelectedList(listType);
-                      setShowBookModal(true);
-                    }}
-                  >
-                    <Text className="text-primary-foreground text-sm font-semibold">Add your first book</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <View className="gap-3">
-                  {books[listType].map((book) => renderBookCard(book, listType))}
-                </View>
-              )}
-            </View>
-          ))}
+                {books[listType].length === 0 ? (
+                  <View className="bg-card rounded-xl p-8 items-center shadow-md">
+                    <Text className="text-muted-foreground text-base mb-4 text-center">
+                      No books in this list
+                    </Text>
+                    <TouchableOpacity
+                      className="bg-primary rounded-md px-4 py-3 active:opacity-70"
+                      onPress={() => {
+                        setSelectedList(listType);
+                        setShowBookModal(true);
+                      }}
+                    >
+                      <Text className="text-primary-foreground text-sm font-semibold">
+                        Add your first book
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <View className="gap-3">
+                    {books[listType].map((book) =>
+                      renderBookCard(book, listType),
+                    )}
+                  </View>
+                )}
+              </View>
+            ),
+          )}
         </View>
       </ScrollView>
 
-      <BookSelectionModal
+      <BookSelection
         isVisible={showBookModal}
         onClose={() => setShowBookModal(false)}
         onBookSelected={addBookToList}
         initialListType={selectedList}
-        modalTitle='Add Book'
-        />
-      
+        modalTitle="Add Book"
+      />
     </SafeAreaView>
   );
-} 
+}

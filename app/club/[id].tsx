@@ -27,33 +27,15 @@ import {
 } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { searchBooks } from '@/lib/api';
+import { useAlert } from '@/lib/utils/useAlert';
 import Members from '@/components/clubPage/Members';
 import CurrentBookSection from '@/components/clubPage/CurrentBookSection';
-import BookSelectionModal from '@/components/clubPage/BookSelectionModal';
+import BookSelectionModal from '@/components/BookSelectionModal';
 import { ClubDetails } from '@/types/club';
 import MeetingsModal from '@/components/clubPage/MeetingsModal';
-import { useAlert } from '@/lib/utils/useAlert';
-import WebDateTimePicker from '@/components/WebDateTimePicker';
 import MeetingsDialog from '@/components/clubPage/MeetingsDialog';
-
-interface Member {
-  id: string;
-  user_id: string;
-  status: 'pending' | 'approved' | 'declined';
-  created_at: string;
-  profiles: {
-    display_name: string | null;
-    email: string;
-  };
-}
-
-interface UserNotes {
-  id: string;
-  notes: string;
-  questions: string | null;
-  updated_at: string;
-}
+import BookSelection from '@/components/BookSelection';
+import MeetingScheduler from '@/components/clubPage/MeetingScheduler';
 
 export interface Meeting {
   id?: string;
@@ -71,24 +53,16 @@ export default function ClubDetailScreen() {
   const { user } = useAuth();
 
   const [club, setClub] = useState<ClubDetails | null>(null);
-  const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isMember, setIsMember] = useState(false);
 
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
+
   // Modal states
   const [showBookModal, setShowBookModal] = useState(false);
-  const [showMeetingModal, setShowMeetingModal] = useState(false);
-  const [showMeetingDialog, setShowMeetingDialog] = useState(false);
-  const [showNotesModal, setShowNotesModal] = useState(false);
+  const [showMeetingScheduler, setShowMeetingScheduler] = useState(false);
 
-  const setShowMeeting = (value: boolean) => {
-    if (Platform.OS === 'web') {
-      setShowMeetingDialog(value);
-    } else {
-      setShowMeetingModal(value);
-    }
-  };
   const [meetingForm, setMeetingForm] = useState({
     id: '',
     title: '',
@@ -189,8 +163,7 @@ export default function ClubDetailScreen() {
       virtual_link: meeting?.virtual_link || '',
       created_by: meeting?.created_by || '',
     });
-    // setShowMeetingModal(true);
-    setShowMeeting(true);
+    setShowMeetingScheduler(true);
   };
 
   const setCurrentBook = async (bookData: any) => {
@@ -266,9 +239,6 @@ export default function ClubDetailScreen() {
     virtual_link: any;
     id?: string; // Add optional id to handle updating an existing meeting
   }) => {
-    console.log('try create/updating meeting');
-    console.log(meetingForm);
-
     if (!meetingForm.title || !meetingForm.date_time) {
       showAlert('Error', 'Please fill in title and date/time');
       return;
@@ -283,8 +253,7 @@ export default function ClubDetailScreen() {
 
       if (error) throw error;
 
-      // setShowMeetingModal(false);
-      setShowMeeting(false);
+      setShowMeetingScheduler(false);
       // todo; instead of setMeetingForm, set the meeting data, but with no id or user
       setMeetingForm({
         id: '',
@@ -333,8 +302,6 @@ export default function ClubDetailScreen() {
     );
   }
 
-  // const notesRevealed = club.club_books?.[0]?.notes_revealed || false;
-
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
       <ScrollView contentContainerStyle={{ padding: 20 }}>
@@ -358,7 +325,6 @@ export default function ClubDetailScreen() {
             </View>
           )}
         </View>
-        {/* <WebDateTimePicker /> */}
 
         <CurrentBookSection
           showBookModal={() => setShowBookModal(true)}
@@ -377,7 +343,7 @@ export default function ClubDetailScreen() {
             {isAdmin && (
               <TouchableOpacity
                 className="p-2"
-                onPress={() => setShowMeeting(true)}
+                onPress={() => setShowMeetingScheduler(true)}
               >
                 <Plus size={16} color="rgb(59, 130, 246)" />
                 {/* blue-500 */}
@@ -436,22 +402,14 @@ export default function ClubDetailScreen() {
         )}
       </ScrollView>
 
-      <MeetingsModal
-        showMeetingModal={showMeetingModal}
-        onClose={() => setShowMeetingModal(false)}
-        // setShowMeetingModal={setShowMeetingModal}
-        createMeeting={createMeeting}
-        initialMeetingData={meetingForm}
-        // initialMeetingData={editMeetingData}
-      />
-      <MeetingsDialog
-        showMeetingDialog={showMeetingDialog}
-        onClose={() => setShowMeetingDialog(false)}
+      <MeetingScheduler
+        showMeetingScheduler={showMeetingScheduler}
+        onClose={() => setShowMeetingScheduler(false)}
         createMeeting={createMeeting}
         initialMeetingData={meetingForm}
       />
 
-      <BookSelectionModal
+      <BookSelection
         isVisible={showBookModal}
         onClose={() => setShowBookModal(false)}
         onBookSelected={setCurrentBook}
