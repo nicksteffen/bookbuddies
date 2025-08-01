@@ -7,5 +7,6 @@ export interface Book {
   synopsis: string | null;
   page_count: number | null;
   year?: string;
-  
+  userRating?: number;
+  clubRating?: number;
 }

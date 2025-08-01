@@ -9,9 +9,13 @@ import { ClubMemberEntry, fetchClubBookData } from '@/lib/utils/clubs';
 import BookTextEntrySection from '@/components/BookTextEntrySection';
 import StarRating from '@/components/StarRating';
 import MemberNoteInfo from '@/components/MemberNoteInfo';
+import GoToClubButton from '@/components/GoToClubButton';
 
 export default function ClubBookDetailPage() {
-  const { id: bookClubId, bookId } = useLocalSearchParams();
+  const { id: bookClubId, bookId } = useLocalSearchParams<{
+    id: string;
+    bookId: string;
+  }>();
   const [clubBookDetails, setClubBookDetails] = useState<ClubBook>();
   const [memberBookData, setMemberBookData] = useState<ClubMemberEntry[]>();
 
@@ -28,19 +32,12 @@ export default function ClubBookDetailPage() {
       .eq('club_id', bookClubId)
       .single();
 
-    console.log('club book deaitls');
-    console.log(data);
-    console.log(error);
-
     if (data) {
       setClubBookDetails(data);
     }
   };
 
   const loadClubMemberBookDetails = async () => {
-    console.log('test');
-    console.log(clubBookDetails);
-    console.log(bookId);
     if (!clubBookDetails || !clubBookDetails.club_id || !bookId) return;
     try {
       console.log('try get data');
@@ -74,6 +71,8 @@ export default function ClubBookDetailPage() {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
+      <GoToClubButton clubId={bookClubId} />
+
       <BookDetailCard
         book={book}
         userRating={clubBookDetails?.average_rating || 5}

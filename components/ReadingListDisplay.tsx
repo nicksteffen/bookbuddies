@@ -42,11 +42,13 @@ const getListTitle = (listType: string) => {
 interface ReadingListDisplayProps {
   listType: listType;
   size: 'small' | 'large';
+  count: number;
 }
 
 export default function ReadingListDisplay({
   listType,
   size,
+  count,
 }: ReadingListDisplayProps) {
   const textClass =
     size === 'small'
@@ -57,6 +59,7 @@ export default function ReadingListDisplay({
     <>
       {getListIcon(listType)}
       <Text className={textClass}> {getListTitle(listType)}</Text>
+      <Text className="text-muted-foreground text-base">{count}</Text>
     </>
   );
 }

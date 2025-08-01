@@ -17,6 +17,7 @@ import { Book as BookData } from '@/types/book';
 import ReadingListDisplay from '@/components/ReadingListDisplay';
 import { useAlert } from '@/lib/utils/useAlert';
 import BookSelection from '@/components/BookSelection';
+import { createOrGetBook, getListTitle } from '@/lib/utils/library';
 
 type listType = 'reading_now' | 'read' | 'want_to_read';
 
@@ -27,8 +28,9 @@ interface OrganizedBooks {
 }
 
 interface BookListItem {
-  books: BookData;
+  book_info: BookData;
   list_type: 'reading_now' | 'read' | 'want_to_read';
+  rating: number;
 }
 
 export default function LibraryScreen() {
@@ -52,25 +54,9 @@ export default function LibraryScreen() {
 
   const loadUserBooks = async () => {
     try {
-      console.log('user');
-      console.log(user);
-      const { data } = (await supabase
-        .from('user_book_lists')
-        .select(
-          `
-          list_type,
-          books (
-            id,
-            title,
-            author,
-            cover_url,
-            synopsis,
-            page_count,
-            isbn
-          )
-        `,
-        )
-        .eq('user_id', user?.id)) as unknown as { data: BookListItem[] };
+      const { data } = (await supabase.rpc('get_user_books_with_ratings', {
+        user_id: user?.id,
+      })) as { data: BookListItem[] };
 
       if (data) {
         const organizedBooks = {
@@ -80,9 +66,13 @@ export default function LibraryScreen() {
         } as OrganizedBooks;
 
         // this is the list type issue with book vs book data
+        // data.forEach((item) => {
         data.forEach((item) => {
-          if (!!item.books && organizedBooks[item.list_type]) {
-            organizedBooks[item.list_type].push(item.books);
+          if (!!item.book_info && organizedBooks[item.list_type]) {
+            organizedBooks[item.list_type].push({
+              ...item.book_info,
+              userRating: item.rating,
+            });
           }
         });
         setBooks(organizedBooks);
@@ -99,38 +89,7 @@ export default function LibraryScreen() {
     if (!listType) return;
 
     try {
-      let bookId = null;
-      const { data: existingBook } = await supabase
-        .from('books')
-        .select('id')
-        .eq('title', bookData.title)
-        .eq('author', bookData.author)
-        .eq('isbn', bookData.isbn)
-        .single();
-
-      if (existingBook) {
-        bookId = existingBook.id;
-      } else {
-        const { data: newBook, error: bookError } = await supabase
-          .from('books')
-          .insert({
-            title: bookData.title,
-            author: bookData.author,
-            isbn: bookData.isbn,
-            cover_url: bookData.cover_url,
-            synopsis: bookData.synopsis,
-            page_count: bookData.page_count,
-          })
-          .select('id')
-          .single();
-
-        if (bookError) throw bookError;
-        bookId = newBook?.id;
-      }
-
-      if (!bookId) {
-        throw new Error('Failed to obtain book ID after creation or lookup.');
-      }
+      const bookId = await createOrGetBook(bookData);
 
       const { data: existingEntry } = await supabase
         .from('user_book_lists')
@@ -226,19 +185,6 @@ export default function LibraryScreen() {
     );
   };
 
-  const getListTitle = (listType: string) => {
-    switch (listType) {
-      case 'reading_now':
-        return 'Currently Reading';
-      case 'read':
-        return 'Read Books';
-      case 'want_to_read':
-        return 'Want to Read';
-      default:
-        return 'Books';
-    }
-  };
-
   const bookButtons = (book: BookData, listType: string) => (
     <View className="flex-row gap-2">
       {listType === 'want_to_read' && (
@@ -261,6 +207,16 @@ export default function LibraryScreen() {
           </Text>
         </TouchableOpacity>
       )}
+      {listType === 'read' && (
+        <TouchableOpacity
+          className="bg-primary rounded-md px-3 py-1.5 active:opacity-70"
+          onPress={() => moveBook(book.id, listType, 'reading_now')}
+        >
+          <Text className="text-primary-foreground text-xs font-semibold">
+            Reread
+          </Text>
+        </TouchableOpacity>
+      )}
       <TouchableOpacity
         className="bg-muted rounded-md px-3 py-1.5 active:opacity-70"
         onPress={() => removeBook(book.id)}
@@ -272,12 +228,14 @@ export default function LibraryScreen() {
     </View>
   );
 
-  const renderBookCard = (book: BookData, listType: string) => (
-    <View key={book.id}>
-      <BookCard book={book} />
-      {bookButtons(book, listType)}
-    </View>
-  );
+  const renderBookCard = (book: BookData, listType: string) => {
+    return (
+      <View key={book.id}>
+        <BookCard book={book} bookRating={book.userRating} />
+        {bookButtons(book, listType)}
+      </View>
+    );
+  };
 
   if (loading) {
     return (
@@ -305,10 +263,11 @@ export default function LibraryScreen() {
             (listType) => (
               <View key={listType} className="mb-8">
                 <View className="flex-row items-center mb-4 gap-2">
-                  <ReadingListDisplay listType={listType} size="large" />
-                  <Text className="text-muted-foreground text-base">
-                    ({books[listType].length})
-                  </Text>
+                  <ReadingListDisplay
+                    listType={listType}
+                    size="large"
+                    count={books[listType].length}
+                  />
                 </View>
 
                 {books[listType].length === 0 ? (
