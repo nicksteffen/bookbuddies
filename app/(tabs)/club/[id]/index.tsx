@@ -24,6 +24,7 @@ import {
   UserMinus,
   Crown,
   MessageSquare,
+  BookMarked,
 } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -36,6 +37,7 @@ import MeetingsModal from '@/components/clubPage/MeetingsModal';
 import MeetingsDialog from '@/components/clubPage/MeetingsDialog';
 import BookSelection from '@/components/BookSelection';
 import MeetingScheduler from '@/components/clubPage/MeetingScheduler';
+import { createOrGetBook } from '@/lib/utils/library';
 
 export interface Meeting {
   id?: string;
@@ -168,34 +170,7 @@ export default function ClubDetailScreen() {
 
   const setCurrentBook = async (bookData: any) => {
     try {
-      // First, create or get the book
-      let bookId = null;
-      const { data: existingBook } = await supabase
-        .from('books')
-        .select('id')
-        .eq('title', bookData.title)
-        .eq('author', bookData.author)
-        .single();
-
-      if (existingBook) {
-        bookId = existingBook.id;
-      } else {
-        const { data: newBook, error: bookError } = await supabase
-          .from('books')
-          .insert({
-            title: bookData.title,
-            author: bookData.author,
-            isbn: bookData.isbn,
-            cover_url: bookData.cover_url,
-            synopsis: bookData.synopsis,
-            page_count: bookData.page_count,
-          })
-          .select('id')
-          .single();
-
-        if (bookError) throw bookError;
-        bookId = newBook.id;
-      }
+      const bookId = await createOrGetBook(bookData);
 
       // Update club's current book
       const { error: clubError } = await supabase
@@ -211,7 +186,7 @@ export default function ClubDetailScreen() {
         {
           club_id: bookClubId,
           book_id: bookId,
-          status: 'current',
+          status: 'reading_now',
           notes_revealed: false,
         },
         {
@@ -222,13 +197,10 @@ export default function ClubDetailScreen() {
 
       if (clubBookError) throw clubBookError;
 
-      // setShowBookModal(false);
-      // setBookSearch('');
-      // setBookResults([]);
       loadClubDetails();
-      Alert.alert('Success', 'Current book updated!');
+      showAlert('Success', 'Current book updated!');
     } catch (error: any) {
-      Alert.alert('Error', error.message);
+      showAlert('Error', error.message);
     }
   };
 
@@ -307,14 +279,31 @@ export default function ClubDetailScreen() {
       <ScrollView contentContainerStyle={{ padding: 20 }}>
         {/* Club Header */}
         <View className="bg-white rounded-xl p-6 mb-6 shadow-md">
-          <Text className="text-2xl font-bold text-gray-800 mb-2">
-            {club.name}
-          </Text>
-          {club.description && (
-            <Text className="text-base text-gray-600 mb-3">
-              {club.description}
-            </Text>
-          )}
+          <View className="flex-row items-center justify-between">
+            <View>
+              <Text className="text-2xl font-bold text-gray-800 mb-2">
+                {club.name}
+              </Text>
+              {club.description && (
+                <Text className="text-base text-gray-600 mb-3">
+                  {club.description}
+                </Text>
+              )}
+            </View>
+            <Link href={`/club/${club.id}/library`} className="text-blue-500">
+              <TouchableOpacity
+                // className="flex-row items-center gap-2 p-2 rounded-lg bg-gray-100 active:bg-gray-200">
+                className="flex-grow flex-row items-center justify-center gap-2 bg-amber-600 rounded-lg py-3 px-4 min-w-[150px]"
+              >
+                <BookMarked size={16} color="black" />
+                <Text className="text-lg font-semibold text-white">
+                  {' '}
+                  View Library
+                </Text>
+              </TouchableOpacity>
+            </Link>
+          </View>
+
           {isAdmin && (
             <View className="flex flex-row items-center gap-1.5 self-start">
               <Crown size={16} color="rgb(245, 158, 11)" />
@@ -417,4 +406,7 @@ export default function ClubDetailScreen() {
       />
     </SafeAreaView>
   );
+}
+function createOrUpdateBook(bookData: any) {
+  throw new Error('Function not implemented.');
 }

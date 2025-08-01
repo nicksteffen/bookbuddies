@@ -8,26 +8,24 @@ export default function TabLayout() {
   if (Platform.OS === 'web') {
     return (
       <>
-      <WebHeader/>
-      <Slot/>
-      <WebFooter/>
+        <WebHeader />
+        <Slot />
+        <WebFooter />
       </>
-    )
+    );
   }
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        ...(Platform.OS !== 'web' && {
-          tabBarStyle: {
-            backgroundColor: '#FFFFFF',
-            borderTopWidth: 1,
-            borderTopColor: '#E5E7EB',
-            paddingTop: 8,
-            paddingBottom: 8,
-            height: 60,
-          },
-        }),
+        tabBarStyle: {
+          backgroundColor: '#FFFFFF',
+          borderTopWidth: 1,
+          borderTopColor: '#E5E7EB',
+          paddingTop: 8,
+          paddingBottom: 8,
+          height: 60,
+        },
         tabBarActiveTintColor: '#3B82F6',
         tabBarInactiveTintColor: '#6B7280',
         tabBarLabelStyle: {
@@ -68,11 +66,24 @@ export default function TabLayout() {
       />
       <Tabs.Screen
         name="test"
+        options={
+          {
+            // href: null
+          }
+        }
+      />
+      <Tabs.Screen
+        name="club"
         options={{
-          // href: null
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="book"
+        options={{
+          href: null,
         }}
       />
     </Tabs>
-    
   );
 }

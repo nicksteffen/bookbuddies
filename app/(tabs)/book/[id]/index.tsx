@@ -11,6 +11,11 @@ import BookDetailCard from '@/components/BookDetailCard';
 import { Scroll } from 'lucide-react-native';
 import { useUserBookData } from '@/hooks/useUserBookData';
 import { useBookDetails } from '@/hooks/useBookDetails';
+import {
+  SafeAreaFrameContext,
+  SafeAreaView,
+} from 'react-native-safe-area-context';
+import GoToClubButton from '@/components/GoToClubButton';
 
 export interface Note {
   user_id: string;
@@ -28,7 +33,6 @@ export interface Question {
 
 export default function BookDetailScreen() {
   const { id: bookId } = useLocalSearchParams<{ id: string }>();
-  // const { user } = useAuth();
 
   const { book, loading: bookLoading, error } = useBookDetails(bookId);
   const {
@@ -42,7 +46,7 @@ export default function BookDetailScreen() {
   } = useUserBookData(bookId);
 
   return (
-    <>
+    <SafeAreaView>
       <ScrollView>
         {!!book && (
           <BookDetailCard
@@ -69,6 +73,6 @@ export default function BookDetailScreen() {
         />
       </ScrollView>
       {/* <UserNotes notes={notes}/> */}
-    </>
+    </SafeAreaView>
   );
 }
